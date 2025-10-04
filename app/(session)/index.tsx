@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedView } from "@/components/themed-view";
@@ -7,12 +7,29 @@ import { ThemedText } from "@/components/themed-text";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import TimerCarousel from "@/components/timer-carousel";
+import { router } from "expo-router";
 
 export default function index() {
     const insets = useSafeAreaInsets()
     const theme = useColorScheme() ?? 'light'
-    const [hourSelected, setHourSelected] = useState(-1)
-    const [minuteSelected, setMinuteSelected] = useState(-1)
+    const [defaultName, setDefaultName] = useState("Deep work")
+    const [hourSelected, setHourSelected] = useState(1)
+    const [minuteSelected, setMinuteSelected] = useState(0)
+
+    const handleSession = () => {
+        if (hourSelected === 0 && minuteSelected === 0) {
+            return;
+        }
+
+        router.push({ 
+            pathname: "/(session)/slot", 
+            params: { name: defaultName, hour: hourSelected, minute: minuteSelected }
+        })
+    }
+
+    // useEffect(() => {
+    //     handleSession()
+    // }, [])
     
     return (
         <ScrollView style={[styles.container, { paddingVertical: insets.top }]}>
@@ -24,7 +41,7 @@ export default function index() {
                 </ThemedText>
                 <ThemedView style={styles.inputView} reverse>
                     <TextInput 
-                        placeholder="Deep work"
+                        placeholder={defaultName}
                         placeholderTextColor={`${Colors[theme].background}36`}
                         style={[
                             styles.input, 
@@ -47,13 +64,12 @@ export default function index() {
                 />
             </ThemedView>     
                         
-            <Pressable onPress={() => {}}>
+            
+            <Pressable onPress={handleSession}>
                 <ThemedView reverse style={styles.smallButton}>
                     <ThemedText reverse style={styles.smallButtonText}>Next</ThemedText>
                 </ThemedView>       
             </Pressable>
-
-            <View style={{ height: insets.bottom + 100, backgroundColor: 'transparent' }} />
         </ScrollView>
     );
 }

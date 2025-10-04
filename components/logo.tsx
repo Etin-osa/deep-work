@@ -9,9 +9,9 @@ export default function Logo() {
     return (
         <ThemedView 
             style={{ 
-                width: 55, 
-                height: 55, 
-                borderRadius: 20,
+                width: 35, 
+                height: 35, 
+                borderRadius: 12,
                 transform: [{ rotate: '-15deg' }],
                 backgroundColor: Colors[theme].icon
             }} 

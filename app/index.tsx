@@ -10,8 +10,8 @@ export default function index() {
     const isFirstTime = useAppSelector(getIsFirstTime)
 
     useEffect(() => {
-        if (isFirstTime) {
-            router.replace("/(session)")
+        if (isFirstTime.journey === "") {
+            router.replace("/onboarding")
         } else {
             router.replace("/login")
         }

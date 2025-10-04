@@ -1,18 +1,18 @@
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet, TextStyle, ViewStyle } from "react-native";
 import React from "react";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
 
 export default function LargeButton({ text, buttonStyle, textStyle, onPress }: { 
     text: string 
-    buttonStyle?: object
-    textStyle?: object
+    buttonStyle?: ViewStyle
+    textStyle?: TextStyle
     onPress?: () => void
 }) {
     return (
         <Pressable onPress={onPress}>
             <ThemedView style={[styles.button, buttonStyle]}>
-                <ThemedText style={[textStyle]}>{text}</ThemedText>
+                <ThemedText style={[textStyle, { fontWeight: 600 }]}>{text}</ThemedText>
             </ThemedView>
         </Pressable>
     );

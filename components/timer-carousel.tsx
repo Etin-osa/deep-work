@@ -49,7 +49,7 @@ const CarouselTimer = ({ counter, setCounter }: {
             height={80}
             width={70}
             snapEnabled={true}
-            pagingEnabled={false}
+            pagingEnabled={true}
             vertical
             loop={true}
             data={counter}

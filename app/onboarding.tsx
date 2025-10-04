@@ -1,5 +1,7 @@
-import { StyleSheet } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import React from "react";
+import { Image } from 'expo-image'
+import { LinearGradient } from 'expo-linear-gradient';
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
@@ -29,84 +31,109 @@ function debounce<T extends (...args: any[]) => any>( func: T,  wait: number): (
 }
 
 const onboardingTitle = [
-    "Eliminate distraction. Build custom focus sessions to crush your goals.",
-    "Silence the noise and maximize productivity with Deep Work.",
-    "Staying Focused will be your New Superpower."
+    "Welcome to {{Deep Work",
+    "Automate and Customize your Sessions {{At Any Point",
+    "The Ultimate App to Charge up your {{Productivity",
 ]
 
 export default function onboarding() {
     const insets = useSafeAreaInsets()
-    const progress = useSharedValue(0)
     const theme = useColorScheme() ?? "dark"
-    const [absoluteProgress, setAbsoluteProgress] = React.useState(0)
     const ref = React.useRef<ICarouselInstance>(null)
+    const progress = useSharedValue(0)
+    const [absoluteProgress, setAbsoluteProgress] = React.useState(0)
+
+    const checkAbsoluteHeight = () => {
+        if (absoluteProgress === 0) {
+            return 100
+        } else if (absoluteProgress === 1) {
+            return 200
+        } else {
+            return 250
+        }
+    }
 
     return (
-        <ThemedView 
+        <View 
             style={{ 
                 flex: 1, 
-                justifyContent: 'space-between', 
-                paddingTop: 60 + insets.top, 
-                paddingBottom: insets.bottom + 10 
+                justifyContent: 'space-between',
+                paddingBottom: insets.bottom + 15
             }}
         >
-            <ThemedView style={{ flex: 1, alignItems: 'center' }}>
-                <Carousel
-                    ref={ref}
-                    height={700}
-                    width={400}
-                    snapEnabled={true}
-                    pagingEnabled={true}
-                    loop={false}
-                    data={onboardingTitle}
-                    defaultScrollOffsetValue={progress}
-                    onConfigurePanGesture={(g: { enabled: (arg0: boolean) => any }) => {
-                        "worklet";
-                        g.enabled(false);
-                    }}
-                    onProgressChange={(_, absoluteProgress) => debounce(() => setAbsoluteProgress(Math.round(absoluteProgress)), 100)()}
-                    renderItem={({ item, index }) => 
-                        <ThemedView style={styles.header} key={index}>
-                            <Logo />
-                            <ThemedText style={styles.headerText}>{item}</ThemedText>
-                            <ThemedView style={[styles.imageView, { backgroundColor: Colors[theme].tabIconDefault }]} />
-                        </ThemedView>
-                    }
-                />
-            </ThemedView>
+            <Image
+                source={require("@/assets/images/guille-pozzi-sbcIAn4Mn14-unsplash.jpg")}
+                style={styles.image}
+            />
 
-            <ThemedView>
-                <ThemedView style={styles.pagination}>
-                    {onboardingTitle.map((_, index) => (
-                        <PaginationBar 
-                            key={index} 
-                            activeColor={Colors[theme].tabIconDefault}
-                            defaultColor={Colors[theme].text}
-                            isActive={absoluteProgress === index}
-                        />
-                    ))}
-                </ThemedView>
-
-                <ThemedView>
-                    <LargeButton 
-                        buttonStyle={{ backgroundColor: Colors[theme].text, marginBottom: 15 }} 
-                        textStyle={{ color: Colors[theme].background }}
-                        text="Start your First Deep Work" 
-                        onPress={() => router.replace("/(session)")}
+            <LinearGradient 
+                colors={['#000000e1', '#0000008f']} 
+                start={[0, 1]} end={[0, 0]}
+                locations={[0.6, 1]}
+                style={[styles.background, { paddingTop: insets.top }]}
+            >
+                <View style={{ flex: 1 }}>
+                    <Carousel
+                        ref={ref}
+                        height={400}
+                        width={400}
+                        snapEnabled={true}
+                        pagingEnabled={true}
+                        loop={false}
+                        data={onboardingTitle}
+                        defaultScrollOffsetValue={progress}
+                        onConfigurePanGesture={(g: { enabled: (arg0: boolean) => any }) => {
+                            "worklet";
+                            g.enabled(false);
+                        }}
+                        style={styles.carousel}  
+                        onProgressChange={(_, absoluteProgress) => debounce(() => setAbsoluteProgress(Math.round(absoluteProgress)), 100)()}
+                        renderItem={({ item, index }) => 
+                            <View key={index} style={styles.eachCarousel}>
+                                <Logo />
+                                <ThemedText style={[styles.headerText]}>
+                                    {item.split("{{")[0]}
+                                    <ThemedText style={[styles.headerText, styles.headerHighlight]}>
+                                        {item.split("{{")[1]}
+                                    </ThemedText>
+                                </ThemedText>
+                            </View>
+                        }
                     />
-                    <LargeButton buttonStyle={{ borderWidth: 1, borderColor: Colors[theme].text }} text="Continue with an account" />
-                </ThemedView>
-            </ThemedView>
-        </ThemedView>
+                </View>
+
+                <View>
+                    <View style={styles.pagination}>
+                        {onboardingTitle.map((_, index) => (
+                            <PaginationBar key={index} isActive={absoluteProgress === index} />
+                        ))}
+                    </View>
+
+                    <View>
+                        <Pressable onPress={() => router.replace("/(session)")}>
+                            <LinearGradient
+                                colors={[Colors.gradient_0, Colors.gradient_1, Colors.gradient_2]}
+                                style={styles.gradientButton}
+                                start={[0, 0]}
+                                end={[1, 0]}
+                            >
+                                <Text style={styles.gradientText}>Start your First Deep Work</Text>
+                            </LinearGradient>
+                        </Pressable>
+                        <LargeButton text="Continue with an account" />
+                    </View>
+                </View>
+            </LinearGradient>
+        </View>
     );
 }
 
-const PaginationBar = ({ isActive, activeColor, defaultColor }: { isActive: boolean, activeColor: string, defaultColor: string }) => {
+const PaginationBar = ({ isActive }: { isActive: boolean }) => {
     const animatedStyle = useAnimatedStyle(() => {
         return {
             width: withTiming(isActive ? 30 : 7, { duration: 200 }),
             backgroundColor: withTiming(
-                isActive ? activeColor : defaultColor, { duration: 200 }
+                isActive ? Colors.gradient_2 : '#EEEEEE', { duration: 200 }
             ),
         }
     })
@@ -115,21 +142,60 @@ const PaginationBar = ({ isActive, activeColor, defaultColor }: { isActive: bool
 }
 
 const styles = StyleSheet.create({
-    header: {
+    image: {
+        position: 'absolute',
+        height: '100%',
+        width: '100%'
+    },
+    background: {
+        paddingHorizontal: 10,
+        width: '100%',
+        flex: 1,
+    },
+    carousel: { 
+        backgroundColor: 'transparent',
+        height: '100%',
+        width: '100%',
         alignItems: 'center',
+        justifyContent: 'center',
+    },
+    eachCarousel: { 
+        height: '100%', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        paddingHorizontal: 10,
+        transform: [{ translateY: 40 }]
     },
     headerText: {
-        fontSize: 25,
-        lineHeight: 30,
+        fontSize: 40,
+        lineHeight: 50,
+        marginTop: 20,
         textAlign: 'center',
-        marginTop: 20
+        fontWeight: '600',
+        letterSpacing: .2
+    },
+    headerHighlight: {
+        color: Colors.gradient_2
     },
     pagination: {
-        justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'row',
-        gap: 5,
-        marginBottom: 30
+        justifyContent: 'center',
+        gap: 3,
+        marginVertical: 30
     },
-    imageView: { marginTop: 60, height: '65%', width: '97%', borderRadius: 35 }
+    gradientButton: {
+        width: '95%',
+        padding: 15,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: 'auto',
+        marginBottom: 15
+    },
+    gradientText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: 'white'
+    }
 });

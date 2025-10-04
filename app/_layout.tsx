@@ -1,16 +1,22 @@
+import { Appearance } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Provider } from 'react-redux';
 import { persistor, store } from '@/redux/store';
 import { PersistGate } from 'redux-persist/integration/react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout() {
     const colorScheme = useColorScheme();
+
+    useEffect(() => {
+        Appearance.setColorScheme("dark")
+    }, [])
 
     return (
         <Provider store={store}>
