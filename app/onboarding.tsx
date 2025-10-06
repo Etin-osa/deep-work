@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemedView } from "@/components/themed-view";
@@ -31,9 +31,9 @@ function debounce<T extends (...args: any[]) => any>( func: T,  wait: number): (
 }
 
 const onboardingTitle = [
-    "Welcome to {{Deep Work",
-    "Automate and Customize your Sessions {{At Any Point",
     "The Ultimate App to Charge up your {{Productivity",
+    "Automate and Customize your Sessions {{At Any Point",
+    "Welcome to {{Deep Work",
 ]
 
 export default function onboarding() {
@@ -43,15 +43,9 @@ export default function onboarding() {
     const progress = useSharedValue(0)
     const [absoluteProgress, setAbsoluteProgress] = React.useState(0)
 
-    const checkAbsoluteHeight = () => {
-        if (absoluteProgress === 0) {
-            return 100
-        } else if (absoluteProgress === 1) {
-            return 200
-        } else {
-            return 250
-        }
-    }
+    // useEffect(() => {
+    //     router.push("/(session)")
+    // }, [])
 
     return (
         <View 

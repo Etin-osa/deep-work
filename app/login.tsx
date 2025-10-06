@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/themed-text";
 export default function login() {
     return (
         <ThemedView>
-            <ThemedText>login</ThemedText>
+            <ThemedText>l33ogin</ThemedText>
         </ThemedView>
     );
 }
