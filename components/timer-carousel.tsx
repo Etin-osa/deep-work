@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
     },
     input: {
         fontSize: 50,
-        lineHeight: 50
+        lineHeight: 50,
+        width: 65
     }
 });

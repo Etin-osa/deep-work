@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome6 } from '@expo/vector-icons'
@@ -32,7 +32,7 @@ export default function index() {
     }, [focus, keyboardHeight])
     const [defaultName, setDefaultName] = useState("Deep work")
     const [hourSelected, setHourSelected] = useState(1)
-    const [minuteSelected, setMinuteSelected] = useState(0)
+    const [minuteSelected, setMinuteSelected] = useState(27)
 
     const handleSession = () => {
         if (hourSelected === 0 && minuteSelected === 0) {
@@ -44,6 +44,13 @@ export default function index() {
             params: { name: defaultName, hour: hourSelected, minute: minuteSelected }
         })
     }
+
+    useEffect(() => {
+        router.push({ 
+            pathname: "/(session)/slot", 
+            params: { name: defaultName, hour: hourSelected, minute: minuteSelected }
+        })
+    }, [])
 
     return (
         <Animated.View style={[styles.container, scrollAnimation, { backgroundColor: Colors[theme].background }]}>
@@ -108,7 +115,7 @@ export default function index() {
             </ScrollView>
 
             <Pressable 
-                style={[styles.bottom, { bottom: insets.bottom, backgroundColor: Colors[theme].background }]} 
+                style={[styles.bottom, { backgroundColor: Colors[theme].background, paddingBottom: insets.bottom }]} 
                 onPress={handleSession}
             >
                 <LinearGradient
@@ -202,7 +209,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         justifyContent: 'center',
         alignItems: 'center',
-        width: '100%'
+        width: '100%',
+        bottom: 0
     },
     gradientButton: {
         width: '50%',
@@ -211,7 +219,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         margin: 'auto',
-        marginBottom: 15,
+        marginBottom: 5,
         flexDirection: 'row',
         gap: 20
     },
