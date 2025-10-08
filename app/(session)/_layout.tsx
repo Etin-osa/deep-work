@@ -1,15 +1,62 @@
 import React from "react";
-import { Stack } from "expo-router";
-import { useAppSelector } from "@/redux/hooks/useAppSelector";
-import { getIsFirstTime } from "@/redux/slices/isFirstTimeSlice";
+import { router, Stack } from "expo-router";
+import { Pressable, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { Colors } from "@/constants/theme";
+import Logo from "@/components/logo";
+import { useColorScheme } from "@/hooks/use-color-scheme.web";
+import { ThemedView } from "@/components/themed-view";
+import { ThemedText } from "@/components/themed-text";
+import { Feather } from "@expo/vector-icons";
 
 export default function _layout() {
-    const isFirstTime = useAppSelector(getIsFirstTime)
+    const theme = useColorScheme() ?? 'dark'
 
     return (
-        <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="slot" options={{ headerShown: false }} />
-        </Stack>
+        <SafeAreaView style={{ flex: 1, backgroundColor: Colors[theme].background }}>
+            <Stack>
+                <Stack.Screen 
+                    name="index" 
+                    options={{ 
+                        header: () => (
+                            <ThemedView style={styles.indexCover}>
+                                <Logo />
+                                <ThemedText style={styles.logoText}>Deep work</ThemedText>
+                            </ThemedView>
+                        )
+                    }} 
+                />
+                <Stack.Screen 
+                    name="custom" 
+                    options={{ 
+                        header: () => (
+                            <ThemedView style={styles.indexCover}>
+                                <Pressable onPress={() => router.back()}>
+                                    <Feather name="arrow-left" size={30} color="white" />
+                                </Pressable>
+                                <ThemedText style={styles.logoText}>New Session</ThemedText>
+                            </ThemedView>
+                        )
+                    }} 
+                />
+                <Stack.Screen name="cycles" options={{ headerShown: false }} />
+            </Stack>
+        </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    indexCover: { 
+        flexDirection: 'row', 
+        gap: 20,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+    },
+    logoText: { 
+        fontSize: 25, 
+        lineHeight: 50,
+        fontWeight: '600'
+    }
+})

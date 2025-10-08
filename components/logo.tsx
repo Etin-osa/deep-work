@@ -13,7 +13,7 @@ export default function Logo() {
                 height: 35, 
                 borderRadius: 12,
                 transform: [{ rotate: '-15deg' }],
-                backgroundColor: Colors[theme].icon
+                backgroundColor: Colors.accentColor
             }} 
         />
     );

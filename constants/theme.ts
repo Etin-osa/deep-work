@@ -16,18 +16,25 @@ export const Colors = {
         icon: '#687076',
         tabIconDefault: '#687076',
         tabIconSelected: tintColorLight,
+        paragraph: '',
+        placeholder: '',
+        inputBg: '',
+        inputLabel: ''
     },
     dark: {
-        text: '#ECEDEE',
-        background: '#0e0f0f',
+        text: '#FAFAFA',
+        background: '#101922',
         tint: tintColorDark,
         icon: '#9BA1A6',
         tabIconDefault: '#9BA1A6',
         tabIconSelected: tintColorDark,
+        paragraph: "rgb(148, 163, 184)",
+        placeholder: "rgb(100, 116, 139)",
+        inputBg: 'rgba(30, 41, 59, 0.5)',
+        inputLabel: 'rgb(203, 213, 225)'
     },
-    gradient_0: "#a240fe",
-    gradient_1: "#b648fe",
-    gradient_2: "#d15cfe",
+    accentColor: "#137fec",
+    secondaryColor: "rgba(19, 127, 236, 0.3)"
 };
 
 export const Fonts = Platform.select({

@@ -1,134 +1,99 @@
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import React, { useEffect, useState } from "react";
+import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
+import React, { useEffect } from "react";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { FontAwesome6 } from '@expo/vector-icons'
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
+import { Ionicons, MaterialCommunityIcons, MaterialIcons, SimpleLineIcons } from '@expo/vector-icons'
 
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
-import TimerCarousel from "@/components/timer-carousel";
-import useKeyboard from "@/hooks/useKeyboard";
+import LargeButton from "@/components/large-button";
 
 export default function index() {
-    const insets = useSafeAreaInsets()
     const theme = useColorScheme() ?? 'light'
-    const { keyboardHeight } = useKeyboard()
-    const [focus, setFocus] = useState<"" | "top" | "bottom">("")
-    const scrollAnimation = useAnimatedStyle(() => {
-        let translateY = 0
-
-        if (focus === "top") {
-            translateY = keyboardHeight == 0 ? 0 : -50
-        }
-        if (focus === "bottom") {
-            translateY = -keyboardHeight
-        }
-
-        return { transform: [{ translateY: withTiming(translateY, { duration: 500 }) }]}
-    }, [focus, keyboardHeight])
-    const [defaultName, setDefaultName] = useState("Deep work")
-    const [hourSelected, setHourSelected] = useState(1)
-    const [minuteSelected, setMinuteSelected] = useState(27)
-
-    const handleSession = () => {
-        if (hourSelected === 0 && minuteSelected === 0) {
-            return;
-        }
-
-        router.push({ 
-            pathname: "/(session)/slot", 
-            params: { name: defaultName, hour: hourSelected, minute: minuteSelected }
-        })
-    }
 
     useEffect(() => {
-        router.push({ 
-            pathname: "/(session)/slot", 
-            params: { name: defaultName, hour: hourSelected, minute: minuteSelected }
-        })
+        router.push("/(session)/custom")
     }, [])
 
     return (
-        <Animated.View style={[styles.container, scrollAnimation, { backgroundColor: Colors[theme].background }]}>
-            <ScrollView keyboardShouldPersistTaps="never">
-                <LinearGradient
-                    colors={[Colors.gradient_0, Colors.gradient_1, Colors.gradient_2]}
-                    start={[0, 1]} end={[0, 0]}
-                >
-                    <View style={[styles.topView, { paddingTop: insets.top }]}>
-                        <Text style={styles.header}>Get started with your first deep work</Text>
-                    </View> 
-                </LinearGradient>
-
-                <ThemedView style={styles.cover}>
-                    <LinearGradient
-                        colors={[Colors.gradient_0, Colors.gradient_1, Colors.gradient_2]}
-                        start={[0, 1]} end={[0, 0]}
-                        style={styles.cardGradient}
-                    >
-                        <ThemedView style={styles.card}>
-                            <ThemedText style={{ textAlign: 'center' }}>
-                                Select a name for your focus session
-                            </ThemedText>
-                            <ThemedView style={styles.inputView}>
-                                <TextInput 
-                                    placeholder={defaultName}
-                                    placeholderTextColor={`${Colors[theme].text}80`}
-                                    onChangeText={(text) => setDefaultName(text)}
-                                    onFocus={() => setFocus("top")}
-                                    onBlur={() => setFocus("")}
-                                    style={[
-                                        styles.input, 
-                                        { 
-                                            borderBottomColor: Colors[theme].text,
-                                            color: Colors[theme].text
-                                        }
-                                    ]}
-                                />
-                            </ThemedView>
+        <ThemedView style={[styles.container]}>
+            <ThemedView>
+                <Pressable>
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <MaterialIcons style={styles.transformIcon} name="psychology" size={35} color="rgb(58, 90, 154)" />
                         </ThemedView>
-                    </LinearGradient>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Focus Mode</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>For intensive, uninterrupted work</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>90 minutes</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
+                <Pressable>
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <MaterialCommunityIcons name="timer-outline" size={24} color="rgb(58, 90, 154)" />
+                        </ThemedView>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Pomodoro</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>Classic time management technique.</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>25 minutes work, 5 minutes break</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
+                <Pressable>
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <Ionicons name="flash-outline" size={24} color="rgb(58, 90, 154)" />
+                        </ThemedView>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Quick Focus</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>For a quick burst of productivity.</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>15 minutes</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
+                <Pressable>
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <SimpleLineIcons name="graduation" size={24} color="rgb(58, 90, 154)" />
+                        </ThemedView>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Study Session</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>Optimized for learning and retention.</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>50 minutes work, 10 minutes break</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
+            </ThemedView>
 
-                    <LinearGradient
-                        colors={[Colors.gradient_0, Colors.gradient_1, Colors.gradient_2]}
-                        start={[0, 1]} end={[0, 0]}
-                        style={styles.cardGradient}
-                    >
-                        <ThemedView style={styles.card}>
-                            <ThemedText style={{ textAlign: 'center' }}>
-                                Pick your focus session duration.
-                            </ThemedText>
-                            <TimerCarousel 
-                                setHourSelected={setHourSelected} 
-                                setMinuteSelected={setMinuteSelected}
-                                setFocus={setFocus}
-                            />
-                        </ThemedView>     
-                    </LinearGradient>
-                </ThemedView>
-
-                <View style={{ height: insets.bottom + 100}} />
-            </ScrollView>
-
-            <Pressable 
-                style={[styles.bottom, { backgroundColor: Colors[theme].background, paddingBottom: insets.bottom }]} 
-                onPress={handleSession}
-            >
-                <LinearGradient
-                    colors={[Colors.gradient_0, Colors.gradient_1, Colors.gradient_2]}
-                    style={styles.gradientButton}
-                    start={[0, 0]}
-                    end={[1, 0]}
-                >
-                    <Text style={styles.gradientText}>Next</Text>
-                    <FontAwesome6 name="arrow-right-long" size={24} color="white" />
-                </LinearGradient>
-            </Pressable>
-        </Animated.View>
+            <LargeButton 
+                text="Create a Custom Session" 
+                buttonStyle={{
+                    backgroundColor: Colors.accentColor,
+                    marginBottom: 15,
+                    width: '100%',
+                    borderRadius: 15
+                }}
+                containerStyle={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '50%',
+                    transform: [{ translateX: '-50%' }],
+                    width: '90%'
+                }}
+                onPress={() => router.push("/(session)/custom")}
+            />
+        </ThemedView>
     );
 }
 
@@ -137,95 +102,30 @@ const styles = StyleSheet.create({
         flex: 1,
         position: 'relative',
     },
-    topView: { 
-        height: 270, 
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#00000049'
-    },
-    cover: {
-        flex: 1,
-        marginTop: 30,
-    },
-    coverTopText: {
-        marginHorizontal: 'auto',
-        marginBottom: 20,
-        textAlign: 'center',
-        paddingHorizontal: 50,
-        paddingVertical: 10,
-        borderRadius: 30
-    },
-    header: {
-        fontSize: 30,
-        textAlign: 'center',
-        lineHeight: 35,
-        width: '70%',
-        marginHorizontal: 'auto',
-        fontWeight: 600,
-        color: Colors.dark.text
-    },
-    cardGradient: {
-        padding: 1.5,
-        marginHorizontal: 10,
-        borderRadius: 20,
-        marginVertical: 5,
-        borderWidth: 1,
-    },
     card: {
-        padding: 20,
-        borderRadius: 20,
-    },
-    inputView: {
-        height: 200,
-        justifyContent: 'center',
-        paddingBottom: 30,
-        borderRadius: 20
-    },
-    input: {
-        borderBottomWidth: 2,
-        textAlign: 'center',
-        fontSize: 30,
-        width: '50%',
-        marginHorizontal: 'auto',
-        paddingBottom: 20
-    },
-    timerView: {
+        marginVertical: 10,
+        marginHorizontal: 20,
+        borderRadius: 16,
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 20
-    },
-    smallButton: {
-        marginTop: 50,
-        width: 250,
-        padding: 20,
-        borderRadius: 30,
-        marginHorizontal: 'auto'
-    },
-    smallButtonText: {
-        fontSize: 20,
-        textAlign: 'center'
-    },
-    bottom: {
-        position: 'absolute',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-        bottom: 0
-    },
-    gradientButton: {
-        width: '50%',
         padding: 15,
-        borderRadius: 30,
-        justifyContent: 'center',
+        gap: 15,
+    },
+    cardLeft: {
+        borderRadius: 16,
+        height: 55,
+        width: 55,
         alignItems: 'center',
-        margin: 'auto',
-        marginBottom: 5,
-        flexDirection: 'row',
-        gap: 20
+        justifyContent: 'center'
     },
-    gradientText: {
+    cardHeader: {
         fontSize: 18,
-        fontWeight: '600',
-        color: 'white'
+        marginBottom: 5
     },
+    transformIcon: {
+        transform: [{ rotateY: '180deg' }]
+    },
+    paragraph: {
+        fontSize: 14,
+        lineHeight: 20
+    }
 });

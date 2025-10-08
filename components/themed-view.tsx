@@ -12,7 +12,7 @@ export function ThemedView({ style, lightColor, darkColor, reverse, ...otherProp
     let backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
     
     if (reverse) {
-        backgroundColor = backgroundColor === "#ffffff" ? '#0e0f0f' : "#ffffff"
+        backgroundColor = backgroundColor === "#ffffff" ? '#101922' : "#ffffff"
     }
 
     return <View style={[{ backgroundColor }, style]} {...otherProps} />;

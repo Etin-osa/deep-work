@@ -11,7 +11,7 @@ export default function index() {
 
     useEffect(() => {
         if (isFirstTime.journey === "") {
-            router.replace("/(session)")
+            router.replace("/onboarding")
         } else {
             router.replace("/login")
         }
