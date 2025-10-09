@@ -28,6 +28,7 @@ export default function RootLayout() {
                             <Stack.Screen name="onboarding" options={{ headerShown: false }} />
                             <Stack.Screen name="login" options={{ headerShown: false }} />
                             <Stack.Screen name="(session)" options={{ headerShown: false }} />
+                            <Stack.Screen name="(active)" options={{ headerShown: false }} />
                         </Stack>
                         <StatusBar style="auto" />
                     </ThemeProvider>

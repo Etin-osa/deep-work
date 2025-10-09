@@ -30,7 +30,7 @@ export default function custom() {
                         placeholderTextColor={Colors[theme].placeholder}
                         style={[styles.input, { 
                             backgroundColor: Colors[theme].inputBg,
-                            borderColor: theme === "dark" ? focus ? 'rgba(82, 104, 136, 1)' : 'rgb(51, 65, 85)' : '',
+                            borderColor: theme === "dark" ? focus ? 'rgba(82, 104, 136, 1)' : Colors[theme].border : '',
                             borderWidth: 1
                         }]}
                         onChangeText={(text) => setLabel(text)}
@@ -44,10 +44,10 @@ export default function custom() {
                         <ThemedView
                             darkColor={Colors.dark.inputBg}
                             style={[styles.topRight, {
-                                borderColor: theme === "dark" ? 'rgb(51, 65, 85)' : '',
+                                borderColor: theme === "dark" ? Colors[theme].border : '',
                             }]}
                         >
-                            <AntDesign name="plus" size={26} color="rgb(51, 65, 85)" />
+                            <AntDesign name="plus" size={26} color={Colors[theme].border} />
                         </ThemedView>
                     </Pressable>
                 </ThemedView>
@@ -93,7 +93,6 @@ export default function custom() {
                 text="Create Session Layout" 
                 buttonStyle={{
                     backgroundColor: Colors.accentColor,
-                    marginBottom: 15,
                     width: '100%',
                     borderRadius: 15
                 }}
@@ -103,7 +102,7 @@ export default function custom() {
                     width: '100%',
                     left: 20,
                 }}
-                onPress={() => router.push("/(session)/custom")}
+                onPress={() => router.push({ pathname: "/(session)/cycles", params: { label, hours, minutes }})}
             />
         </ThemedView>
     );

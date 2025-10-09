@@ -94,7 +94,7 @@ export default function onboarding() {
                 />
             </ThemedView>
 
-            <ThemedView style={{ paddingBottom: insets.bottom + 30 }}>
+            <ThemedView style={{ paddingBottom: insets.bottom }}>
                 <ThemedView style={styles.pagination}>
                     {onboardingTitle.map((each, index) => 
                         <PaginationBar key={each.title} isActive={index === absoluteProgress} />

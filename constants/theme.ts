@@ -19,7 +19,9 @@ export const Colors = {
         paragraph: '',
         placeholder: '',
         inputBg: '',
-        inputLabel: ''
+        inputLabel: '',
+        slotModal: '',
+        border: ''
     },
     dark: {
         text: '#FAFAFA',
@@ -31,9 +33,11 @@ export const Colors = {
         paragraph: "rgb(148, 163, 184)",
         placeholder: "rgb(100, 116, 139)",
         inputBg: 'rgba(30, 41, 59, 0.5)',
-        inputLabel: 'rgb(203, 213, 225)'
+        inputLabel: 'rgb(203, 213, 225)',
+        slotModal: 'rgb(15, 23, 42)',
+        border: 'rgb(51, 65, 85)'
     },
-    accentColor: "#137fec",
+    accentColor: "rgba(19, 127, 236, 1)",
     secondaryColor: "rgba(19, 127, 236, 0.3)"
 };
 

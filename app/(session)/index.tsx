@@ -80,7 +80,6 @@ export default function index() {
                 text="Create a Custom Session" 
                 buttonStyle={{
                     backgroundColor: Colors.accentColor,
-                    marginBottom: 15,
                     width: '100%',
                     borderRadius: 15
                 }}
