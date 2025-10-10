@@ -1,4 +1,4 @@
-import { Platform, Pressable, StyleSheet, TextInput, useColorScheme, View, ViewStyle } from "react-native";
+import { Platform, Pressable, StyleSheet, TextInput, useColorScheme, View } from "react-native";
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
