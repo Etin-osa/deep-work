@@ -29,8 +29,10 @@ export default function RootLayout() {
                             <Stack.Screen name="login" options={{ headerShown: false }} />
                             <Stack.Screen name="(session)" options={{ headerShown: false }} />
                             <Stack.Screen name="(active)" options={{ headerShown: false }} />
+                            <Stack.Screen name="(home)" options={{ headerShown: false }} />
+                            <Stack.Screen name="(home_tabs)" options={{ headerShown: false }} />
                         </Stack>
-                        <StatusBar style="auto" />
+                        <StatusBar style="light" />
                     </ThemeProvider>
                 </GestureHandlerRootView>
             </PersistGate>

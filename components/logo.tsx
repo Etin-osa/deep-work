@@ -9,8 +9,8 @@ export default function Logo() {
     return (
         <ThemedView 
             style={{ 
-                width: 35, 
-                height: 35, 
+                width: 30, 
+                height: 30, 
                 borderRadius: 12,
                 transform: [{ rotate: '-15deg' }],
                 backgroundColor: Colors.accentColor

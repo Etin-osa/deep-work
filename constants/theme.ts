@@ -38,7 +38,7 @@ export const Colors = {
         border: 'rgb(51, 65, 85)'
     },
     accentColor: "rgba(19, 127, 236, 1)",
-    secondaryColor: "rgba(19, 127, 236, 0.3)"
+    secondaryColor: "rgba(19, 127, 236, 0.3)",
 };
 
 export const Fonts = Platform.select({

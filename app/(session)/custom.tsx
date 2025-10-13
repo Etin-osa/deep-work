@@ -12,7 +12,7 @@ export default function custom() {
     const theme = useColorScheme() ?? 'dark'
     const minuteRef = useRef<TextInput | null>(null)
     const [focus, setFocus] = useState(false)
-    const [hours, setHours] = useState("2")
+    const [hours, setHours] = useState("4")
     const [minutes, setMinutes] = useState("30")
     const [label, setLabel] = useState("Morning Study")
 

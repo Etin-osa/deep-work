@@ -1,4 +1,4 @@
-import { Platform, Pressable, StyleSheet, TextInput, useColorScheme, View } from "react-native";
+import { Dimensions, Platform, Pressable, StyleSheet, TextInput, useColorScheme, View } from "react-native";
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,6 +6,7 @@ import { DraxList, DraxListItem, DraxProvider } from 'react-native-drax';
 import { BottomSheetModal, BottomSheetView, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
 
+import SlotSheet from "@/components/slot-sheet";
 import { Colors } from "@/constants/theme";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
@@ -24,14 +25,14 @@ type SlotCard = {
 export default function slot() {
     const insets = useSafeAreaInsets()
     const theme = useColorScheme() ?? 'light'
+    const deviceHeight = Dimensions.get("screen").height
     const { label, hours, minutes } = useLocalSearchParams()
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
     const [slotList, setSlotList] = useState<SlotCard[]>([])
     const [extraTime, setExtraTime] = useState(10)
-    const [sheeType, setSheetType] = useState<SlotType>("work")
+    const [sheetType, setSheetType] = useState<SlotType>("work")
     const [showModal, setShowModal] = useState("")
     const [sheetSlot, setSheeSlot] = useState<SlotCard | undefined>()
-    const [focus, setFocus] = useState("")
 
     function makeId(prefix = '') {
         return prefix + Math.random().toString(36).slice(2, 9);
@@ -162,9 +163,10 @@ export default function slot() {
                             itemProps={itemProps}
                             style={{ marginVertical: 7, marginHorizontal: 10, borderRadius: 15 }}
                             draggingStyle={{ opacity: 0 }}
-                            hoverDraggingStyle={{ borderWidth: 1, borderColor: 'rgba(82, 104, 136, 1)' }}
+                            hoverDraggingStyle={{ borderWidth: 1, borderColor: 'rgba(82, 104, 136, 1)', transform: [{ scale: 1.05 }] }}
                             dragReleasedStyle={{ opacity: 0 }}
                             key={item.id}
+                            longPressDelay={200}
                         >
                             <ThemedView style={styles.card} darkColor={Colors.dark.inputBg}>
                                 <View style={styles.cardLeft}>
@@ -272,7 +274,7 @@ export default function slot() {
             <BottomSheetModalProvider>
                 <BottomSheetModal 
                     ref={bottomSheetModalRef}
-                    snapPoints={["70%", "90%"]}
+                    snapPoints={deviceHeight > 832 ? ["60%", "90%"] : ["70", "90"]}
                     // snapPoints={["100%"]}
                     enableDynamicSizing={false}
                     enablePanDownToClose
@@ -297,131 +299,28 @@ export default function slot() {
                     }
                 >
                     <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 10, gap: 20 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <ThemedText style={{ fontWeight: 'bold', fontSize: 18 }}>
-                                {sheetSlot ? 'Edit Time Slot' : 'Add Time Slot'}
-                            </ThemedText>
-                            <Pressable onPress={handleCloseModalPress}>
-                                <AntDesign name="close" size={20} color={Colors[theme].placeholder} />
-                            </Pressable>
-                        </View>
-
-                        <View style={{ gap: 10 }}>
-                            <ThemedText darkColor={Colors[theme].inputLabel}>Type</ThemedText>
-                            <View style={styles.bottomType}>
-                                <Pressable 
-                                    style={[
-                                        styles.eachBottomType, 
-                                        { 
-                                            borderColor: sheeType === "work" ? "rgb(19, 127, 236)" : Colors[theme].border,
-                                            backgroundColor: sheeType === "work" ? Colors.secondaryColor : 'transparent'
-                                        }
-                                    ]}
-                                    onPress={() => setSheetType("work")}
-                                >
-                                    <Entypo name="laptop" size={24} color={sheeType === "work" ? Colors.accentColor : 'white'} />
-                                    <ThemedText style={{ color: sheeType === "work" ? Colors.accentColor : 'white', fontWeight: 'bold' }}>Work</ThemedText>
-                                </Pressable>
-                                <Pressable 
-                                    style={[
-                                        styles.eachBottomType, 
-                                        { 
-                                            borderColor: sheeType === "break" ? "rgb(19, 127, 236)" : Colors[theme].border,
-                                            backgroundColor: sheeType === "break" ? Colors.secondaryColor : 'transparent'
-                                        }
-                                    ]}
-                                    onPress={() => setSheetType("break")}
-                                >
-                                    <MaterialIcons name="coffee" size={24} color={sheeType === "break" ? Colors.accentColor : 'white'} />
-                                    <ThemedText style={{ color: sheeType === "break" ? Colors.accentColor : 'white', fontWeight: 'bold' }}>Break</ThemedText>
-                                </Pressable>
-                            </View>
-                        </View>
-
-                        {sheeType === "work" &&
-                            <View style={{ gap: 10 }}>
-                                <ThemedText darkColor={Colors[theme].inputLabel}>Name</ThemedText>
-                                <TextInput 
-                                    placeholder="e.g., Research"
-                                    defaultValue={sheetSlot?.label}
-                                    placeholderTextColor={Colors[theme].placeholder}
-                                    style={[styles.input, {
-                                        backgroundColor: Colors[theme].inputBg,
-                                        borderColor: theme === "dark" ? focus === "name" ? 'rgba(82, 104, 136, 1)' : Colors[theme].border : '',
-                                        borderWidth: 1
-                                    }]}
-                                    onFocus={() => setFocus("name")}
-                                    onBlur={() => setFocus("")}
-                                />
-                            </View>
-                        }
-
-                        <View style={{ gap: 10 }}>
-                            <ThemedText darkColor={Colors[theme].inputLabel}>Duration</ThemedText>
-                            <View style={styles.sheetTimer}>
-                                <View style={[styles.numberInputView, {
-                                    backgroundColor: Colors[theme].inputBg,
-                                    borderColor: theme === "dark" ? focus === "hour" ? 'rgba(82, 104, 136, 1)' : Colors[theme].border : '',
-                                    borderWidth: 1
-                                }]}>
-                                    <View style={styles.numberInputSection}>
-                                        <TextInput 
-                                            style={styles.numberInput}
-                                            defaultValue="00"
-                                            keyboardType="number-pad"
-                                            onFocus={() => {
-                                                setFocus("hour")
-                                            }}
-                                            onBlur={() => {
-                                                setFocus("")
-                                            }}
-                                        />
-                                        <ThemedText 
-                                            darkColor={Colors[theme].placeholder}
-                                            style={{ transform: [{ translateY: 1 }]}}
-                                        >hour</ThemedText>
-                                    </View>
-
-                                    <View style={styles.numberInputSection}>
-                                        <TextInput 
-                                            style={styles.numberInput}
-                                            defaultValue={sheetSlot ? `${sheetSlot.duration}` : "00"}
-                                            keyboardType="number-pad"
-                                            onFocus={() => {
-                                                setFocus("min")
-                                            }}
-                                            onBlur={() => setFocus("")}
-                                        />
-                                        <ThemedText 
-                                            darkColor={Colors[theme].placeholder}
-                                            style={{ transform: [{ translateY: 1 }]}}
-                                        >min</ThemedText>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-
-                        <View style={styles.sheetBottomView}>
-                            <LargeButton 
-                                text="Cancel" 
-                                buttonStyle={{
-                                    backgroundColor: 'rgb(51, 65, 85)',
-                                    borderRadius: 15,
-                                    width: "100%"
-                                }}
-                                containerStyle={{ flex: 1 }}
-                                onPress={handleCloseModalPress}
-                            />
-                            <LargeButton 
-                                text="Save" 
-                                buttonStyle={{
-                                    backgroundColor: Colors.accentColor,
-                                    borderRadius: 15,
-                                    width: "100%"
-                                }}
-                                containerStyle={{ flex: 1 }}
-                            />
-                        </View>
+                        <SlotSheet 
+                            handleCloseModalPress={handleCloseModalPress}
+                            setSheetType={setSheetType}
+                            sheetSlot={sheetSlot}
+                            sheetType={sheetType}
+                            theme={theme}
+                            closeColor={Colors[theme].placeholder}
+                            selectedBorderColor="rgb(19, 127, 236)"
+                            selectedBackgroundColor={Colors.secondaryColor}
+                            selectedContentColor={Colors.accentColor}
+                            defaultBorderColor={Colors[theme].border}
+                            defaultBackgroundColor='transparent'
+                            defaultContentColor="white"
+                            labelColor={Colors[theme].inputLabel}
+                            inputBackgroundColor={Colors[theme].inputBg}
+                            inputFocusColor={'rgba(82, 104, 136, 1)'}
+                            inputBlurColor={Colors[theme].border}
+                            placeholderColor={Colors[theme].placeholder}
+                            cancelButtonColor='rgb(51, 65, 85)'
+                            saveButtonColor={Colors.accentColor}
+                            timerColor={Colors[theme].placeholder}
+                        />
                     </BottomSheetView>
                 </BottomSheetModal>
             </BottomSheetModalProvider>
