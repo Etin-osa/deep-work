@@ -1,6 +1,6 @@
-import { useColorScheme } from "react-native";
+import { Pressable, useColorScheme } from "react-native";
 import React from "react";
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import { Feather, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -31,33 +31,49 @@ export default function _layout() {
                         size={size} 
                         color={color} />
                 ),
-                tabBarLabel: 'Deep Work',
-                headerShown: false
+                headerShown: false,
+                tabBarLabelStyle: {
+                    display: 'none'
+                }
             }} />
             <Tabs.Screen name="stats" options={{
                 tabBarIcon: ({ color, size }) => (
                     <Ionicons 
                         name="stats-chart" 
-                        size={size} 
+                        size={size - 3} 
                         color={color} 
                     />
                 ),
-                tabBarLabel: 'Stats',
-                headerShown: false
+                headerShown: false,
+                tabBarLabelStyle: {
+                    display: 'none'
+                }
             }}/>
             <Tabs.Screen name="profile" options={{
                 tabBarIcon: ({ color, size }) => (
-                    <FontAwesome5 
-                        name="user-circle" 
-                        size={size} 
+                    <Feather 
+                        name="settings" 
+                        size={size - 3} 
                         color={color} 
                     />
                 ),
-                tabBarLabel: 'Profile',
                 headerShown: true,
                 tabBarStyle: {
                     display: 'none'
-                }
+                },
+                headerTitle: "Settings",
+                headerStyle: {
+                    backgroundColor: Colors.dark.background
+                },
+                tabBarLabelStyle: {
+                    display: 'none'
+                },
+                headerLeft: () => (
+                    <Pressable style={{ paddingLeft: 20}} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back-outline" size={26} color="#FFFFFF" />
+                    </Pressable>
+                ),
+                headerTitleAlign: 'center'
             }} />
         </Tabs>
     );

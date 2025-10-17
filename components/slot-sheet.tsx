@@ -1,22 +1,14 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Colors } from "@/constants/theme";
 import { AntDesign, Entypo, MaterialIcons } from "@expo/vector-icons";
 import { BottomSheetView } from "@gorhom/bottom-sheet";
 import LargeButton from "./large-button";
 import { ThemedText } from "./themed-text";
-
-type SlotType = 'work' | 'break';
-
-type SlotCard = {
-    id: string;
-    type: SlotType;
-    duration: number; 
-    label: string;
-}
+import { SlotCard, SlotType } from "@/redux/slices/sessionSlice";
 
 export default function SlotSheet({ 
-    theme, sheetType, closeColor, sheetSlot, setSheetType, handleCloseModalPress,
+    theme, sheetType, closeColor, sheetSlot, setSheetType, handleCloseModalPress, onSave,
     defaultBackgroundColor, defaultBorderColor, defaultContentColor, selectedBackgroundColor, 
     selectedContentColor, selectedBorderColor, labelColor, inputBackgroundColor, inputFocusColor, 
     cancelButtonColor, saveButtonColor, placeholderColor, inputBlurColor, timerColor
@@ -26,6 +18,7 @@ export default function SlotSheet({
     sheetType: SlotType
     setSheetType: React.Dispatch<React.SetStateAction<SlotType>>
     handleCloseModalPress: () => void
+    onSave: (name: string, time: number) => void
     closeColor: string
     defaultBackgroundColor: string
     defaultBorderColor: string
@@ -43,6 +36,31 @@ export default function SlotSheet({
     timerColor: string
 }) {
     const [focus, setFocus] = useState("")
+    const [nameValue, setNameValue] = useState(sheetSlot ? sheetSlot.label : sheetType === "work" ? "Work" : "Break")
+    const [textSelection, setTextSelection] = useState<{ start: number, end: number } | undefined>()
+    const minuteRef = useRef<TextInput | null>(null)
+    const hourRef = useRef<TextInput | null>(null)
+    const nameRef = useRef<TextInput | null>(null)
+    const [timeValue, setTimeValue] = useState({
+        hour: "00",
+        minute: "00"
+    })
+    const [errorMessage, setErrorMessage] = useState<"name" | "time" | "">("")
+
+    const generateTime = () => {
+        return (parseInt(timeValue.hour) * 60) + parseInt(timeValue.minute)
+    }
+
+    useEffect(() => {
+        if (!sheetSlot) { return; }
+        let hoursDom = Math.floor(sheetSlot.duration / 60)
+        let minutesDom = Math.round(sheetSlot.duration - (60 * hoursDom)).toString()
+
+        setTimeValue({ 
+            hour: hoursDom.toString().length === 1 ? "0" + hoursDom.toString() : hoursDom.toString() , 
+            minute: minutesDom.length === 1 ? "0" + minutesDom : minutesDom
+        })
+    }, [sheetSlot])
 
     return (
         <>
@@ -66,7 +84,7 @@ export default function SlotSheet({
                                 backgroundColor: sheetType === "work" ? selectedBackgroundColor : defaultBackgroundColor
                             }
                         ]}
-                        onPress={() => setSheetType("work")}
+                        onPress={() => {setSheetType("work"); setNameValue("Work")}}
                     >
                         <Entypo name="laptop" size={24} color={sheetType === "work" ? selectedContentColor : defaultContentColor} />
                         <ThemedText style={{ color: sheetType === "work" ? selectedContentColor : defaultContentColor, fontWeight: 'bold' }}>Work</ThemedText>
@@ -79,7 +97,10 @@ export default function SlotSheet({
                                 backgroundColor: sheetType === "break" ? selectedBackgroundColor : defaultBackgroundColor
                             }
                         ]}
-                        onPress={() => setSheetType("break")}
+                        onPress={() => {
+                            setNameValue("Break")
+                            setSheetType("break")
+                        }}
                     >
                         <MaterialIcons name="coffee" size={24} color={sheetType === "break" ? selectedContentColor : defaultContentColor} />
                         <ThemedText style={{ color: sheetType === "break" ? selectedContentColor : defaultContentColor, fontWeight: 'bold' }}>Break</ThemedText>
@@ -91,14 +112,16 @@ export default function SlotSheet({
                 <View style={{ gap: 10 }}>
                     <ThemedText darkColor={labelColor}>Name</ThemedText>
                     <TextInput 
+                        ref={nameRef}
                         placeholder="e.g., Research"
-                        defaultValue={sheetSlot?.label}
+                        defaultValue={sheetSlot ? sheetSlot.label : nameValue}
                         placeholderTextColor={placeholderColor}
                         style={[styles.input, {
                             backgroundColor: inputBackgroundColor,
-                            borderColor: focus === "name" ? inputFocusColor : inputBlurColor,
+                            borderColor: focus === "name" ? inputFocusColor : errorMessage === "name" ? Colors.inputError : inputBlurColor,
                             borderWidth: 1
                         }]}
+                        onChangeText={(text) => setNameValue(text)}
                         onFocus={() => setFocus("name")}
                         onBlur={() => setFocus("")}
                     />
@@ -110,19 +133,35 @@ export default function SlotSheet({
                 <View style={styles.sheetTimer}>
                     <View style={[styles.numberInputView, {
                         backgroundColor: inputBackgroundColor,
-                        borderColor: focus === "hour" || focus === "min" ? inputFocusColor : inputBlurColor,
+                        borderColor: focus === "hour" || focus === "min" ? inputFocusColor : errorMessage === "time" ? Colors.inputError : inputBlurColor,
                         borderWidth: 1
                     }]}>
                         <View style={styles.numberInputSection}>
                             <TextInput 
+                                ref={hourRef}
                                 style={styles.numberInput}
-                                defaultValue="00"
+                                value={timeValue.hour}
                                 keyboardType="number-pad"
+                                selection={textSelection}
                                 onFocus={() => {
+                                    setTextSelection({ start: 0, end: 2 })
                                     setFocus("hour")
                                 }}
                                 onBlur={() => {
                                     setFocus("")
+                                    setErrorMessage("")
+                                }}
+                                onChangeText={(text) => {
+                                    setTextSelection(undefined)
+                                    const numbersOnly = text.replace(/[^0-9]/g, '');
+                                    setTimeValue(current => ({
+                                        ...current,
+                                        hour: numbersOnly
+                                    }))
+
+                                    if (text.length === 2 && minuteRef) {
+                                        minuteRef.current?.focus()
+                                    }
                                 }}
                             />
                             <ThemedText 
@@ -133,13 +172,36 @@ export default function SlotSheet({
 
                         <View style={styles.numberInputSection}>
                             <TextInput 
+                                ref={minuteRef}
                                 style={styles.numberInput}
-                                defaultValue={sheetSlot ? `${sheetSlot.duration}` : "00"}
+                                value={timeValue.minute}
                                 keyboardType="number-pad"
+                                selection={textSelection}
                                 onFocus={() => {
+                                    setTextSelection({ start: 0, end: 2 })
                                     setFocus("min")
                                 }}
-                                onBlur={() => setFocus("")}
+                                onBlur={() => {
+                                    setErrorMessage("")
+                                    setFocus("")
+                                }}
+                                onChangeText={(text) => {
+                                    setTextSelection(undefined)
+                                    const num = parseInt(text)
+
+                                    if ((num >= 0 && num <= 59) || text === '') { 
+                                        const numbersOnly = text.replace(/[^0-9]/g, '');
+                                        setTimeValue(current => ({
+                                            ...current,
+                                            minute: numbersOnly
+                                        }))
+                                    } else {
+                                        setTimeValue(current => ({
+                                            ...current,
+                                            minute: "59"
+                                        }))
+                                    }
+                                }}
                             />
                             <ThemedText 
                                 darkColor={timerColor}
@@ -169,6 +231,19 @@ export default function SlotSheet({
                         width: "100%"
                     }}
                     containerStyle={{ flex: 1 }}
+                    onPress={() => {                        
+                        if (nameValue === "") { 
+                            setErrorMessage("name")
+                        } else if (timeValue.hour === "00" && timeValue.minute === "00") {
+                            setErrorMessage("time")
+                        } else {    
+                            onSave(nameValue, generateTime())
+                        }
+
+                        nameRef.current?.blur()
+                        hourRef.current?.blur()
+                        minuteRef.current?.blur()
+                    }}
                 />
             </View>
         </>

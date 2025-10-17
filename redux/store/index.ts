@@ -2,7 +2,7 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from "redux-persist";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import isFirstTime from "../slices/isFirstTimeSlice";
-import session from "../slices/sessionSlice";
+import sessions from "../slices/sessionSlice";
 
 const persistConfig = {
     key: 'root',
@@ -12,7 +12,7 @@ const persistConfig = {
 
 const reducers = combineReducers({
     isFirstTime,
-    session
+    sessions
 })
 
 const persistedReducer = persistReducer(persistConfig, reducers)

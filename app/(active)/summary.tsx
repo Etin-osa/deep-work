@@ -1,5 +1,5 @@
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { ThemedView } from "@/components/themed-view";
 import { Entypo, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
@@ -8,14 +8,16 @@ import { Colors } from "@/constants/theme";
 import LargeButton from "@/components/large-button";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { useSharedValue } from "react-native-reanimated";
 
 export default function summary() {
     const insets = useSafeAreaInsets()
     const deviceWidth = Dimensions.get("screen").width
+    const percentage = useSharedValue(0)
 
-    useEffect(() => {
-        router.replace("/(home_tabs)/profile")
-    }, [])
+    // useEffect(() => {
+    //     router.replace("/(home_tabs)/profile")
+    // }, [])
 
     return (
         <ThemedView style={styles.container}>
@@ -33,7 +35,11 @@ export default function summary() {
                 </ThemedView>
 
                 <ThemedView darkColor="#1A242E" style={{ borderRadius: 15, paddingVertical: 10, marginBottom: 30 }}>
-                    <ProgressBar backgroundColor={Colors.accentColor} progressBarColor="#24D397">
+                    <ProgressBar 
+                        backgroundColor={Colors.accentColor} 
+                        progressBarColor="#24D397" 
+                        percentage={percentage}
+                    >
                         <View>
                             <ThemedText darkColor="rgb(255, 255, 255, 0.8)" style={{ textAlign: 'center', fontSize: 14 }}>Total time</ThemedText>
                             <ThemedText style={styles.timer}>2h 15m</ThemedText>

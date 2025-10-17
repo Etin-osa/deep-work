@@ -1,29 +1,39 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-type SessionType = {
-    name: string
-    hour: number
-    minute: number
-    slots: {
-        id: number
-        name: string
-        type: "break" | "work"
-        duration: number
-    }[]
+export type SlotType = 'work' | 'break';
+
+export type SlotCard = {
+    id: string;
+    type: SlotType;
+    duration: number; 
+    label: string;
 }
 
-const initialState: SessionType[] = []
+type SessionType = {
+    label: string
+    hour: number
+    minute: number
+    slots: SlotCard[]
+}
+
+const initialState: SessionType = {
+    hour: 0,
+    minute: 0,
+    label: "",
+    slots: []
+}
 
 const sessionSlice = createSlice({
     name: "sessions",
     initialState,
     reducers: {
         addNewSession: (state, action) => {
-            state.push(action.payload)
+            state = action.payload
+            return state
         }
     }
 })
 
 export const { addNewSession } = sessionSlice.actions
-export const getAllSessions = (state: { sessions: SessionType[] }) => state.sessions
+export const getAllSessions = (state: { sessions: SessionType }) => state.sessions
 export default sessionSlice.reducer

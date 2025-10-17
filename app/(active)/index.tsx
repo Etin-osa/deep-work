@@ -1,11 +1,13 @@
+import { Dimensions } from "react-native";
 import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlatList } from "react-native-gesture-handler";
 import { AntDesign, Entypo, Feather, MaterialIcons } from "@expo/vector-icons";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { cancelAnimation, Easing, SharedValue, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { DraxList, DraxListItem, DraxProvider, DraxView } from "react-native-drax";
+import { router } from "expo-router";
 
 import SlotSheet from "@/components/slot-sheet";
 import { ThemedView } from "@/components/themed-view";
@@ -13,70 +15,35 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import ProgressBar from "@/components/progress-bar";
 import LargeButton from "@/components/large-button";
-import { Dimensions } from "react-native";
-import { router } from "expo-router";
-
-type SlotType = 'work' | 'break';
-
-type SlotCard = {
-    id: string;
-    type: SlotType;
-    duration: number; 
-    label: string;
-}
-
-const customObjects = [
-    {
-        id: 'w-1',
-        type: 'work',
-        duration: 25,
-        label: 'Deep Work Session'
-    },
-    {
-        id: 'b-1',
-        type: 'break',
-        duration: 5,
-        label: 'Short Break'
-    },
-    {
-        id: 'w-2',
-        type: 'work',
-        duration: 25,
-        label: 'Focused Task'
-    },
-    {
-        id: 'b-2',
-        type: 'break',
-        duration: 5,
-        label: 'Coffee Break'
-    },
-    {
-        id: 'w-3',
-        type: 'work',
-        duration: 25,
-        label: 'Project Work'
-    },
-    {
-        id: 'b-3',
-        type: 'break',
-        duration: 15,
-        label: 'Long Break'
-    }
-];
+import { useAppSelector } from "@/redux/hooks/useAppSelector";
+import { getAllSessions, SlotCard, SlotType } from "@/redux/slices/sessionSlice";
+import useKeyboard from "@/hooks/useKeyboard";
 
 export default function index() {
+    const sessions = useAppSelector(getAllSessions)
     const insets = useSafeAreaInsets()
     const theme = useColorScheme() ?? 'dark'
     const deviceHeight = Dimensions.get("screen").height
     const bottomSheetRef = useRef<BottomSheet>(null)
     const dragSheetRef = useRef<FlatList | null>(null)
-    const [playPause, setPlayPause] = useState(false)
-    const [sheetType, setSheetType] = useState<"tasks" | "analytics" | "edit">("analytics")
-    const [cycles, setCycles] = useState(customObjects)
     const sheetPosition = useSharedValue(0)
+    const { keyboardVisible } = useKeyboard()
+    
+    // For counter and progressbar
+    const counterRef = useRef<number>(0)
+    const [counter, setCounter] = useState(5)
+    const [progress, setProgress] = useState(5)
+    const [remainingSection, setRemaningSection] = useState(sessions.slots)
+    const [activeSection, setActiveSession] = useState<SlotCard | undefined>()
+    const [compledSection, setCompletedSection] = useState<SlotCard[]>([])
+    const [playPause, setPlayPause] = useState(false)
+    const percentage = useSharedValue(0)
+    const modalPercentage = useSharedValue(0)
+    
+    const [sheetType, setSheetType] = useState<"tasks" | "analytics" | "edit">("analytics")
     const [taskType, setTaskType] = useState<SlotType>("work")
     const [sheetSlot, setSheeSlot] = useState<SlotCard | undefined>()
-    const [showModal, setShowModal] = useState("........")
+    const [showModal, setShowModal] = useState("show")
 
     const chevronAnimation = useAnimatedStyle(() => ({
         transform: [{ rotate: sheetPosition.value + 'deg' }]
@@ -98,14 +65,129 @@ export default function index() {
         }
     }
 
+    const formatTime = (totalSeconds: number) => {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        
+        if (hours > 0) {
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    const presentTime = (totalSeconds: number) => {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return `${hours}hour ${minutes > 0 ? minutes + 'min' : ''}`
+        }
+        return `${minutes}min`
+    }
+
+    const calculateCompletedTime = () => {
+        const completedDuration = compledSection.map(each => each.duration).reduce((a, b) => a + b)
+        return presentTime(completedDuration * 60)
+    }
+
+    const handleNewSession = () => {
+        const newActiveSession = remainingSection[0]
+
+        setCompletedSection(completed => {
+            const updatedCompleted = [...completed]
+            if (!activeSection) { return updatedCompleted }
+            return [...updatedCompleted, activeSection ]
+        })
+        setActiveSession(newActiveSession)
+        setRemaningSection(current => {
+            const newSection = [...current]
+            newSection.shift()
+            return newSection
+        })
+        setShowModal("")
+        setSheetType("tasks")
+        // setProgress(newActiveSession.duration * 60)
+        // return newActiveSession.duration * 60
+        setProgress(newActiveSession.duration)
+        return newActiveSession.duration
+    }
+
+    const handleInterval = (value: number) => {
+        if (!(value <= 1)) {
+            return value - 1
+        }
+
+        if (showModal.length > 0) {
+            return handleNewSession()
+        } else {
+            if (remainingSection.length > 0) {
+                setShowModal("show")
+                setProgress(5)
+                return 5
+            }
+
+            setShowModal("Completed")
+            clearInterval(counterRef.current)
+            return NaN
+        }
+    }
+
+    const handleProgressBar = (sharedValue: SharedValue<number>) => {
+        if (sharedValue.value === 1) {
+            sharedValue.value = withTiming(0, { duration: 0 })
+        }
+        sharedValue.value = withTiming(1, { duration: progress * 1000, easing: Easing.linear })
+    }
+
     useEffect(() => {
-        router.push("/(active)/summary")
-    }, [])
+        if (!Number.isNaN(counter)) {
+            counterRef.current = setInterval(() => {
+                setCounter(counter => handleInterval(counter))
+            }, 1000);
+        } else {
+            router.push("/(active)/summary")
+        }
+        
+        if (playPause) {
+            setProgress(counter)
+            clearInterval(counterRef.current)
+        }
+
+        return () => {
+            clearInterval(counterRef.current)
+        }
+    }, [counter, showModal, remainingSection, compledSection, activeSection, playPause, progress])
+
+    useEffect(() => {
+        if (!playPause) {
+            if (showModal === "") {
+                handleProgressBar(percentage)
+            } else if (showModal === "show") {
+                handleProgressBar(modalPercentage)
+            }
+        } else {
+            if (showModal === "") {
+                cancelAnimation(percentage)
+            } else {
+                cancelAnimation(modalPercentage)
+            }
+        }
+    }, [progress, playPause, showModal])
+
+    useEffect(() => {
+        if (keyboardVisible) {
+            bottomSheetRef.current?.snapToPosition("100%")
+        } else {
+            // bottomSheetRef.current?.collapse()
+        }
+    }, [keyboardVisible])
 
     return (
         <ThemedView darkColor="rgb(53, 158, 255)" style={{ flex: 1, paddingTop: insets.top }}>
             <View style={styles.headerView}>
-                <ThemedText style={styles.headerLabel}>Focus Session</ThemedText>
+                <ThemedText style={styles.headerLabel}>{sessions.label}</ThemedText>
                 <Pressable style={styles.headerButton}>
                     <ThemedText style={{ fontWeight: 'bold' }}>Stop</ThemedText>
                 </Pressable>
@@ -113,23 +195,44 @@ export default function index() {
 
             <View style={[styles.view, { marginBottom: '10%' }]}>
                 <View style={styles.body}>
-                    <ThemedText style={styles.bodyTop}>WORK</ThemedText>
+                    <ThemedText style={styles.bodyTop}>{activeSection?.label}</ThemedText>
                 </View>
 
-                <ProgressBar backgroundColor="#FFFFFF" progressBarColor="rgba(255, 255, 255, 0.1)">
-                    <ThemedText style={{ fontSize: 50, fontWeight: 'bold', lineHeight: 70}}>24:15</ThemedText>
+                <ProgressBar 
+                    backgroundColor="rgba(255, 255, 255, 0.1)" 
+                    progressBarColor="rgba(255, 255, 255, 0.9)"
+                    percentage={percentage}
+                >
+                    <ThemedText style={{ fontSize: 50, fontWeight: 'bold', lineHeight: 70}}>
+                        {Number.isNaN(counter) ? "00:00" : formatTime(counter)}
+                    </ThemedText>
                 </ProgressBar>
 
                 <View style={{ gap: 15 }}>
-                    <ThemedText style={styles.bodyText}>Time Done: 00:35</ThemedText>
-                    <ThemedText style={styles.bottomBodyText}>Total Work Time: 30 min</ThemedText>
+                    {compledSection.length > 0 &&
+                        <ThemedText style={styles.bodyText}>Time Completed: {calculateCompletedTime()}</ThemedText>
+                    }
+                    {activeSection &&
+                        <ThemedText style={styles.bottomBodyText}>
+                            {activeSection.label} Time: {presentTime(activeSection.duration * 60)}
+                        </ThemedText>
+                    }
                 </View>
 
                 <View style={styles.bottomView}>
-                    <View style={styles.bottomSection}>
+                    <Pressable style={styles.bottomSection} onPress={() => {
+                        if (remainingSection[0] !== undefined) {
+                            setCounter(5)
+                            setProgress(5)
+                            setShowModal("show")
+                            percentage.value = withTiming(1, { duration: 0}) 
+                        } else {
+                            router.replace("/(active)/summary")
+                        }
+                    }}>
                         <Feather name="trash-2" size={24} color="white" />
                         <ThemedText style={{ fontWeight: 'bold' }}>Delete</ThemedText>
-                    </View>
+                    </Pressable>
                     <Pressable 
                         onPress={() => setPlayPause(!playPause)} 
                         style={[styles.bottomSection, {
@@ -152,7 +255,7 @@ export default function index() {
             
             <BottomSheet 
                 backgroundStyle={{ backgroundColor: 'rgba(19, 127, 236, 1)' }} 
-                handleIndicatorStyle={{ backgroundColor: 'rgb(255, 255, 255, .5)' }}
+                handleIndicatorStyle={{ backgroundColor: 'rgba(255, 255, 255, .5)' }}
                 ref={bottomSheetRef}
                 snapPoints={["10%"]}
                 onChange={updateChevronAnimation}
@@ -192,7 +295,7 @@ export default function index() {
                             <>
                                 <DraxProvider style={{ height: 300 }}>
                                     <DraxList 
-                                        data={cycles}
+                                        data={remainingSection}
                                         parentDraxViewProps={{ style: { height: 300 } }}
                                         ref={dragSheetRef}
                                         renderItem={({ item }, itemProps) => 
@@ -220,13 +323,13 @@ export default function index() {
                                                         <Pressable style={{ padding: 5 }} onPress={() => {
                                                             setSheetType("edit")
                                                             setTaskType(item.type as SlotType)
-                                                            setSheeSlot(item as SlotCard)
+                                                            setSheeSlot(item)
                                                         }}>
                                                             <Feather name="edit-2" size={18} color="rgba(255, 255, 255, 0.6)" />
                                                         </Pressable>
                                                         <Pressable style={{ padding: 5 }} onPress={() => {
-                                                            setCycles(cycles.filter(each => each.id !== item.id))
-                                                            setSheeSlot(item as SlotCard)
+                                                            setRemaningSection(remainingSection.filter(each => each.id !== item.id))
+                                                            setSheeSlot(item)
                                                         }}>
                                                             <Feather name="trash-2" size={18} color="rgba(255, 255, 255, 0.6)" />
                                                         </Pressable>
@@ -235,10 +338,10 @@ export default function index() {
                                             </DraxListItem>
                                         }
                                         onItemReorder={({fromIndex, toIndex}) => {
-                                            const newData = [...cycles];
+                                            const newData = [...remainingSection];
                                             const item = newData.splice(fromIndex, 1)[0];
                                             newData.splice(toIndex, 0, item);
-                                            setCycles(newData);
+                                            setRemaningSection(newData);
                                         }}
                                     />
                                 </DraxProvider>
@@ -320,6 +423,7 @@ export default function index() {
                             cancelButtonColor='rgba(255, 255, 255, 0.2)'
                             saveButtonColor="rgba(51, 65, 85, 0.77)"
                             timerColor="rgba(255, 255, 255, 0.6)"
+                            onSave={() => null}
                         />
 
                         <View style={{ height: insets.bottom }} />
@@ -328,17 +432,20 @@ export default function index() {
             </BottomSheet>
 
             {/* Modal */}
-            {showModal.length > 0 && 
+            {showModal === "show" && 
                 <ThemedView style={[styles.activeModal, { height: deviceHeight }]}>
                     <ThemedView style={[styles.activeModalTop, { paddingTop: insets.top }]}>
-                        <ThemedText style={styles.activeModalTitle}>Next up: Work Session</ThemedText>
+                        <ThemedText style={styles.activeModalTitle}>Session starting in...</ThemedText>
                         <ProgressBar
                             backgroundColor="rgba(255, 255, 255, 0.1)" 
                             progressBarColor={Colors.accentColor} 
+                            percentage={modalPercentage}
                         >
-                            <ThemedText style={{ fontSize: 70, lineHeight: 70, fontWeight: 'bold' }}>5</ThemedText>
+                            <ThemedText style={{ fontSize: 70, lineHeight: 70, fontWeight: 'bold' }}>
+                                {Number.isNaN(counter) ? "00:00" : counter}
+                            </ThemedText>
                         </ProgressBar>
-                        <ThemedText style={{ color: 'rgb(156, 163, 175)' }}>Next session starts automatically</ThemedText>
+                        <ThemedText style={{ color: 'rgb(156, 163, 175)' }}>Next session: {remainingSection[0].label}</ThemedText>
                     </ThemedView>
 
                     <ThemedView>
@@ -350,16 +457,21 @@ export default function index() {
                                 marginBottom: 10
                             }}
                             textStyle={{ fontWeight: 'bold' }}
-                            onPress={() => setShowModal("")}
+                            onPress={() => {
+                                modalPercentage.value = withTiming(1, { duration: 0}) 
+                                setCounter(() => handleNewSession())
+                            }}
                         />
                         <LargeButton 
-                            text="Pause" 
+                            text={playPause ? "Resume" : "Pause"} 
                             buttonStyle={{
-                                backgroundColor: 'rgb(51, 65, 85)',
+                                backgroundColor: playPause ? 'rgba(125, 211, 33, 0.64)' : 'rgb(51, 65, 85)',
                                 borderRadius: 30,
                             }}
                             textStyle={{ fontWeight: 'bold' }}
-                            // onPress={() => setShowModal("")}
+                            onPress={() => {
+                                setPlayPause(current => !current)
+                            }}
                         />
                         <View style={{ height: insets.bottom }} />
                     </ThemedView>

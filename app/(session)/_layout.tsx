@@ -21,10 +21,15 @@ export default function _layout() {
                     options={{ 
                         header: () => (
                             <ThemedView style={styles.indexCover}>
-                                <Logo />
-                                <ThemedText style={styles.logoText}>Deep work</ThemedText>
+                                <Feather 
+                                    name="target" 
+                                    size={24} 
+                                    color={Colors.accentColor} 
+                                />
+                                <ThemedText style={styles.logoText}>Welcome to Deep work</ThemedText>
                             </ThemedView>
-                        )
+                        ),
+                        headerRight: () => <></>
                     }} 
                 />
                 <Stack.Screen 
@@ -49,7 +54,7 @@ export default function _layout() {
 const styles = StyleSheet.create({
     indexCover: { 
         flexDirection: 'row', 
-        gap: 20,
+        gap: 15,
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingBottom: 20,
@@ -57,6 +62,7 @@ const styles = StyleSheet.create({
     logoText: { 
         fontSize: 25, 
         lineHeight: 50,
-        fontWeight: '600'
+        fontWeight: '600',
+        width: '100%'
     }
 })

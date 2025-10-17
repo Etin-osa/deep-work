@@ -1,7 +1,6 @@
 import { StyleSheet, View } from "react-native";
-import React from "react";
-import { ThemedText } from "./themed-text";
-import Animated, { useAnimatedProps, useSharedValue, withTiming } from "react-native-reanimated";
+import React, { useEffect } from "react";
+import Animated, { cancelAnimation, Easing, SharedValue, useAnimatedProps, withTiming } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle)
@@ -9,22 +8,17 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 const CIRCLE_LENGTH = 800
 const SVG_SIZE = 300
 
-export default function progressBar({ progressBarColor, backgroundColor, children, radius, size }: { 
+export default function progressBar({ progressBarColor, backgroundColor, percentage, children, radius }: { 
     progressBarColor: string
     backgroundColor: string
     children: React.ReactNode
+    percentage: SharedValue<number>
     radius?: number
-    size?: number
 }) {
-    const percentage = useSharedValue(0.2)
-    const VIEW_SIZE = size ?? SVG_SIZE
     const RADIUS = radius ? radius / (2 * Math.PI) : CIRCLE_LENGTH / (2 * Math.PI)
-
     const animatedPercentage = useAnimatedProps(() => ({
         strokeDashoffset: CIRCLE_LENGTH * percentage.value
-    }), [percentage])
-
-    const updateProgressAnimation = () => percentage.value = withTiming(1, { duration: 2000 })
+    }))
 
     return (
         <View style={styles.svgCover}>

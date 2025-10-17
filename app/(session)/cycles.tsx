@@ -1,7 +1,6 @@
-import { Dimensions, Platform, Pressable, StyleSheet, TextInput, useColorScheme, View } from "react-native";
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { Dimensions, Platform, Pressable, StyleSheet, useColorScheme, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DraxList, DraxListItem, DraxProvider } from 'react-native-drax';
 import { BottomSheetModal, BottomSheetView, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { BlurView } from 'expo-blur';
@@ -12,6 +11,9 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { AntDesign, Entypo, Feather, FontAwesome, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import LargeButton from "@/components/large-button";
+import useKeyboard from "@/hooks/useKeyboard";
+import { useDispatch } from "react-redux";
+import { addNewSession } from "@/redux/slices/sessionSlice";
 
 type SlotType = 'work' | 'break';
 
@@ -23,13 +25,14 @@ type SlotCard = {
 }
 
 export default function slot() {
-    const insets = useSafeAreaInsets()
     const theme = useColorScheme() ?? 'light'
+    const dispatch = useDispatch()
     const deviceHeight = Dimensions.get("screen").height
-    const { label, hours, minutes } = useLocalSearchParams()
+    const params = useLocalSearchParams()
+    const { keyboardVisible } = useKeyboard()
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
     const [slotList, setSlotList] = useState<SlotCard[]>([])
-    const [extraTime, setExtraTime] = useState(10)
+    const [extraTime, setExtraTime] = useState(0)
     const [sheetType, setSheetType] = useState<SlotType>("work")
     const [showModal, setShowModal] = useState("")
     const [sheetSlot, setSheeSlot] = useState<SlotCard | undefined>()
@@ -38,15 +41,46 @@ export default function slot() {
         return prefix + Math.random().toString(36).slice(2, 9);
     }
 
+    const checkWork = () => {
+        switch (params.mode) {
+            case "pomodoro":
+                return 25;
+            case "study":
+                return 50
+            default:
+                return 30;
+        }
+    }
+
+    const checkBreak = () => {
+        switch (params.mode) {
+            case "pomodoro":
+                return 5;
+            case "study":
+                return 10
+            default:
+                return 5;
+        }
+    }
+
+    const presentTime = () => {
+        const totalTime = (parseInt(params.hours as string) * 60) + parseInt(params.minutes as string)
+        let hoursDom = Math.floor(totalTime / 60);
+        let minutesDom = Math.round(totalTime - (60 * hoursDom))
+        const isPlural = hoursDom > 1 ? ' hours' : ' hour'
+
+        return `${hoursDom > 0 ? hoursDom + isPlural : ''}${minutesDom > 0 ? ' ' + minutesDom + ' minutes' : ''}`
+    }
+
     const generateCycles = useCallback(() => {
         const slots: SlotCard[] = []
-        const totalMinutes = (parseInt(hours as string) * 60) + parseInt(minutes as string)
+        const totalMinutes = (parseInt(params.hours as string) * 60) + parseInt(params.minutes as string)
 
-        if (totalMinutes <= 20) {
+        if (totalMinutes <= 29 || params.mode === "focus" || (params.mode === "custom" && totalMinutes <= 34)) {
             slots.push({
                 id: makeId('w-'),
                 type: 'work',
-                duration: 20,
+                duration: totalMinutes,
                 label: 'Work',
             })
 
@@ -54,27 +88,9 @@ export default function slot() {
             return;
         }
 
-        if (totalMinutes <= 60) {
-            const workDuration = Math.max(1, Math.round(totalMinutes - 5));
-
-            slots.push({
-                id: makeId('w-'),
-                type: 'work',
-                duration: workDuration,
-                label: `Work`,
-            })
-            slots.push({
-                id: makeId('b-'),
-                type: 'break',
-                duration: 5,
-                label: 'Break (5 min)',
-            })
-
-            setSlotList(slots)
-            return;
-        }
-
-        const cycleLength = 45 + 10 // Average cycle length
+        const cycleWork = checkWork()
+        const cycleBreak = checkBreak()
+        const cycleLength = cycleWork + cycleBreak // Average cycle length
         const cycles = Math.floor(totalMinutes / cycleLength) // Number of cycles in totalMinutes
         const usedByCycles = cycles * cycleLength // totalMinutes of usedTime
         let remaining = Math.round(totalMinutes - usedByCycles);
@@ -83,13 +99,13 @@ export default function slot() {
             slots.push({
                 id: makeId('w-'),
                 type: 'work',
-                duration: 45,
+                duration: cycleWork,
                 label: 'Work',
             })
             slots.push({
                 id: makeId('b-'),
                 type: 'break',
-                duration: 10,
+                duration: cycleBreak,
                 label: 'Break',
             })
         })
@@ -124,11 +140,63 @@ export default function slot() {
         setSlotList(newList)
     }
 
-    useEffect(() => {
-        // generateCycles()
-        // handlePresentModalPress()
+    const calculateExtraTime = () => {
+        const totalMinutes = (parseInt(params.hours as string) * 60) + parseInt(params.minutes as string)
+        const slotDuration = slotList.map(slot => slot.duration).reduce((a, b) => a + b, 0)
 
+        setExtraTime(slotDuration - totalMinutes)
+    }
+
+    const handleOnSaveSlot = (label: string, duration: number) => {
+        if (sheetSlot) {
+            const currentSlot = slotList.filter(slot => slot.id === sheetSlot.id)
+            
+            if (!currentSlot) {
+                console.log("Slot id not found")
+            }
+
+            const newId = currentSlot[0].id.split('-')
+            const customId = sheetType === "break" ? 'b-' : 'w-'
+            const editedSlot: SlotCard = {
+                duration, label, type: sheetType, id: customId + newId[1]
+            }
+
+            const newSlotList = slotList.map(slot => currentSlot[0].id === slot.id ? editedSlot : slot)
+            setSlotList(newSlotList)
+        } else {
+            const customId = sheetType === "break" ? 'b-' : 'w-'
+            setSlotList([...slotList, {
+                duration, label, type: sheetType, id: makeId(customId)
+            }])
+        }
+        
+        bottomSheetModalRef.current?.forceClose()
+    }
+
+    const handleSlots = () => {
+        dispatch(addNewSession({
+            label: params.label,
+            hour: params.hour,
+            minute: params.minute,
+            slots: slotList
+        }))
         router.replace("/(active)")
+    }
+
+    useEffect(() => {
+        if (keyboardVisible) {
+            bottomSheetModalRef.current?.expand()
+        } else {
+            bottomSheetModalRef.current?.collapse()
+        }
+    }, [keyboardVisible])
+
+    useEffect(() => {
+        calculateExtraTime()
+    }, [slotList])
+
+    useEffect(() => {
+        generateCycles()
     }, [])
 
     return (
@@ -137,21 +205,37 @@ export default function slot() {
                 <Pressable onPress={() => router.back()}>
                     <Feather name="arrow-left" size={30} color="white" />
                 </Pressable>
-                <ThemedText style={styles.headerLabel}>{label}</ThemedText>
+                <ThemedText style={styles.headerLabel}>{params.label}</ThemedText>
                 <Pressable>
                     <ThemedText darkColor={Colors.accentColor} style={{ fontSize: 18, fontWeight: '600' }}>Save</ThemedText>
                 </Pressable>
             </ThemedView>
 
             <ThemedView style={styles.timeView}>
-                <ThemedText style={{ fontSize: 18 }} darkColor={Colors[theme].placeholder}>1 hour 30 minutes </ThemedText>
-                <ThemedView style={styles.extraTime}>
-                    <ThemedText style={[styles.extraTimeTitle, {  color: 'rgb(74, 222, 128)' }]}>
-                        <FontAwesome name="plus" size={30} color="rgb(74, 222, 128)" />
-                        {extraTime}
-                    </ThemedText>
-                    <ThemedText style={[{ color: Colors[theme].inputLabel }, styles.extraMin]}>min</ThemedText>
-                </ThemedView>
+                <ThemedText style={{ 
+                    fontSize: extraTime === 0 ? 25 : 18, 
+                    color: extraTime === 0 ? 'white' : Colors[theme].placeholder 
+                }}>
+                    {presentTime()}
+                </ThemedText>
+                {extraTime !== 0 &&
+                    <ThemedView style={styles.extraTime}>
+                        <ThemedView style={{ transform: [{ translateY: extraTime > 0 ? -5 : -10 }] }}>
+                            <FontAwesome 
+                                name={extraTime > 0 ? "plus" : "minus"} 
+                                size={30} 
+                                color={extraTime > 0 ? 'rgb(74, 222, 128)' : "rgb(222, 74, 74)" }
+                            />
+                        </ThemedView>
+                        <ThemedText style={[styles.extraTimeTitle, {  
+                            color: extraTime > 0 ? 'rgb(74, 222, 128)' : "rgb(222, 74, 74)",
+                            marginRight: 10
+                        }]}>
+                            {Math.abs(extraTime)}
+                        </ThemedText>
+                        <ThemedText style={[{ color: Colors[theme].inputLabel }, styles.extraMin]}>min</ThemedText>
+                    </ThemedView>
+                }
             </ThemedView>
 
             <DraxProvider>
@@ -183,7 +267,7 @@ export default function slot() {
                                             }
                                         </ThemedView>
                                         <View>
-                                            <ThemedText>{item.label}</ThemedText>
+                                            <ThemedText>{item.label.length > 10 ? item.label.substring(0, 10) + '...' : item.label}</ThemedText>
                                             <ThemedText style={{ fontSize: 15 }} darkColor={Colors[theme].paragraph}>{item.duration} min</ThemedText>
                                         </View>
                                     </View>
@@ -221,7 +305,7 @@ export default function slot() {
             </DraxProvider>
 
             <LargeButton 
-                text="Start Session " 
+                text="Start Session" 
                 buttonStyle={{
                     backgroundColor: Colors.accentColor,
                     width: '100%',
@@ -231,7 +315,13 @@ export default function slot() {
                     width: '95%',
                     marginHorizontal: 'auto'
                 }}
-                onPress={() => setShowModal("Adjust time")}
+                onPress={() => {
+                    if (extraTime !== 0) {
+                        setShowModal("Adjust Time")
+                    } else {
+                        handleSlots()
+                    }
+                }}
             />
 
             {showModal.length > 0 &&
@@ -264,7 +354,7 @@ export default function slot() {
                                     borderRadius: 30,
                                 }}
                                 textStyle={{ fontWeight: 'bold' }}
-                                onPress={() => router.push("/(active)")}
+                                onPress={handleSlots}
                             />
                         </View>
                     </ThemedView>
@@ -274,14 +364,14 @@ export default function slot() {
             <BottomSheetModalProvider>
                 <BottomSheetModal 
                     ref={bottomSheetModalRef}
-                    snapPoints={deviceHeight > 832 ? ["60%", "90%"] : ["70", "90"]}
-                    // snapPoints={["100%"]}
+                    snapPoints={deviceHeight > 832 ? ["65%", "100%"] : ["70", "100%"]}
                     enableDynamicSizing={false}
                     enablePanDownToClose
                     onChange={(index) => index === -1 && setSheeSlot(undefined)}
                     backgroundStyle={{
                         backgroundColor: Colors[theme].slotModal,
                     }}
+                    handleIndicatorStyle={{ backgroundColor: 'rgb(255, 255, 255)' }}
                     keyboardBehavior="interactive"
                     backdropComponent={props => Platform.OS === "ios" ? 
                         <BlurView
@@ -320,6 +410,7 @@ export default function slot() {
                             cancelButtonColor='rgb(51, 65, 85)'
                             saveButtonColor={Colors.accentColor}
                             timerColor={Colors[theme].placeholder}
+                            onSave={handleOnSaveSlot}
                         />
                     </BottomSheetView>
                 </BottomSheetModal>
@@ -351,7 +442,7 @@ const styles = StyleSheet.create({
     },
     extraTime: { 
         flexDirection: 'row',
-        gap: 10,
+        // gap: 10,
         marginTop: 5,
         alignItems: 'flex-end'
     },

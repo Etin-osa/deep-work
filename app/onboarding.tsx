@@ -102,7 +102,7 @@ export default function onboarding() {
                 </ThemedView>
 
                 <LargeButton 
-                    text="Create your first deep work" 
+                    text="Create Your First Habit" 
                     buttonStyle={{
                         backgroundColor: Colors.accentColor,
                         marginBottom: 15
