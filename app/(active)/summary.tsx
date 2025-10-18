@@ -1,5 +1,5 @@
 import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { ThemedView } from "@/components/themed-view";
 import { Entypo, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
@@ -9,15 +9,18 @@ import LargeButton from "@/components/large-button";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useSharedValue } from "react-native-reanimated";
+import { useAppSelector } from "@/redux/hooks/useAppSelector";
+import { getAllSessions } from "@/redux/slices/sessionSlice";
 
 export default function summary() {
     const insets = useSafeAreaInsets()
+    const sessions = useAppSelector(getAllSessions)
     const deviceWidth = Dimensions.get("screen").width
     const percentage = useSharedValue(0)
 
-    // useEffect(() => {
-    //     router.replace("/(home_tabs)/profile")
-    // }, [])
+    useEffect(() => {
+        console.log(sessions)
+    }, [])
 
     return (
         <ThemedView style={styles.container}>

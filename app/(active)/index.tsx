@@ -1,69 +1,41 @@
 import { Dimensions } from "react-native";
-import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FlatList } from "react-native-gesture-handler";
-import { AntDesign, Entypo, Feather, MaterialIcons } from "@expo/vector-icons";
-import Animated, { cancelAnimation, Easing, SharedValue, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { DraxList, DraxListItem, DraxProvider, DraxView } from "react-native-drax";
+import { Feather } from "@expo/vector-icons";
+import { cancelAnimation, Easing, SharedValue, useSharedValue, withTiming } from "react-native-reanimated";
 import { router } from "expo-router";
 
-import SlotSheet from "@/components/slot-sheet";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import ProgressBar from "@/components/progress-bar";
 import LargeButton from "@/components/large-button";
 import { useAppSelector } from "@/redux/hooks/useAppSelector";
-import { getAllSessions, SlotCard, SlotType } from "@/redux/slices/sessionSlice";
-import useKeyboard from "@/hooks/useKeyboard";
+import { addNewSessionOnActive, getAllSessions, SlotCard, updateSession } from "@/redux/slices/sessionSlice";
+import ActiveBottomSheet from "@/components/active-bottom-sheet";
+import { useAppDispatch } from "@/redux/hooks/useAppDispatch";
+import { presentTime } from "@/constants/utils";
+import { actions } from "react-native-drax/build/hooks/useDraxState";
 
 export default function index() {
     const sessions = useAppSelector(getAllSessions)
     const insets = useSafeAreaInsets()
-    const theme = useColorScheme() ?? 'dark'
+    const dispatch = useAppDispatch()
     const deviceHeight = Dimensions.get("screen").height
-    const bottomSheetRef = useRef<BottomSheet>(null)
-    const dragSheetRef = useRef<FlatList | null>(null)
-    const sheetPosition = useSharedValue(0)
-    const { keyboardVisible } = useKeyboard()
-    
+
     // For counter and progressbar
     const counterRef = useRef<number>(0)
     const [counter, setCounter] = useState(5)
     const [progress, setProgress] = useState(5)
     const [remainingSection, setRemaningSection] = useState(sessions.slots)
     const [activeSection, setActiveSession] = useState<SlotCard | undefined>()
-    const [compledSection, setCompletedSection] = useState<SlotCard[]>([])
+    const [completedSection, setCompletedSection] = useState<SlotCard[]>([])
     const [playPause, setPlayPause] = useState(false)
     const percentage = useSharedValue(0)
     const modalPercentage = useSharedValue(0)
     
-    const [sheetType, setSheetType] = useState<"tasks" | "analytics" | "edit">("analytics")
-    const [taskType, setTaskType] = useState<SlotType>("work")
-    const [sheetSlot, setSheeSlot] = useState<SlotCard | undefined>()
     const [showModal, setShowModal] = useState("show")
-
-    const chevronAnimation = useAnimatedStyle(() => ({
-        transform: [{ rotate: sheetPosition.value + 'deg' }]
-    }), [sheetPosition])
-
-    const handleCloseModalPress = useCallback(() => {
-        bottomSheetRef.current?.collapse()
-    }, [])
-
-    const handlePresentModalPress = useCallback(() => {
-        bottomSheetRef.current?.expand();
-    }, [])
-
-    const updateChevronAnimation = (index: number) => {
-        if (index === 0) {
-            sheetPosition.value = withTiming(0, { duration: 400 })
-        } else {
-            sheetPosition.value = withTiming(180, { duration: 400 })
-        }
-    }
 
     const formatTime = (totalSeconds: number) => {
         const hours = Math.floor(totalSeconds / 3600);
@@ -76,20 +48,41 @@ export default function index() {
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    const presentTime = (totalSeconds: number) => {
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-
-        if (hours > 0) {
-            return `${hours}hour ${minutes > 0 ? minutes + 'min' : ''}`
-        }
-        return `${minutes}min`
+    const calculateCompletedTime = () => {
+        const completedDuration = completedSection.map(each => each.skipTime ?? each.duration).reduce((a, b) => a + b)
+        return presentTime(completedDuration * 60)
     }
 
-    const calculateCompletedTime = () => {
-        const completedDuration = compledSection.map(each => each.duration).reduce((a, b) => a + b)
-        return presentTime(completedDuration * 60)
+    const calculateTotalTime = () => sessions.slots.map(each => {
+        if (each.id.includes('w-')) {
+            return each.duration
+        }
+        return 0
+    }).reduce((a,b) => a+b)
+
+    const handleCompletedSession = () => {
+        const completed = [ ...completedSection, { 
+            ...activeSection, status: activeSection?.status ?? "completed" 
+        } ]
+        dispatch(updateSession(completed))
+        router.replace("/(active)/summary")
+    }
+
+    const handleSkippedSession = () => {
+        setCounter(5)
+        setProgress(5)
+        setShowModal("show")
+        percentage.value = withTiming(1, { duration: 0}) 
+        if (playPause) {
+            setPlayPause(false)
+        }
+        setActiveSession(active => {
+            if (active) {
+                return { ...active, status: "skipped", skipTime: active.duration - counter }
+            }
+
+            return active
+        })
     }
 
     const handleNewSession = () => {
@@ -98,7 +91,11 @@ export default function index() {
         setCompletedSection(completed => {
             const updatedCompleted = [...completed]
             if (!activeSection) { return updatedCompleted }
-            return [...updatedCompleted, activeSection ]
+
+            return [
+                ...updatedCompleted, 
+                { ...activeSection, status: activeSection.status ?? "completed" } 
+            ]
         })
         setActiveSession(newActiveSession)
         setRemaningSection(current => {
@@ -107,7 +104,6 @@ export default function index() {
             return newSection
         })
         setShowModal("")
-        setSheetType("tasks")
         // setProgress(newActiveSession.duration * 60)
         // return newActiveSession.duration * 60
         setProgress(newActiveSession.duration)
@@ -147,7 +143,8 @@ export default function index() {
                 setCounter(counter => handleInterval(counter))
             }, 1000);
         } else {
-            router.push("/(active)/summary")
+            handleCompletedSession()
+            
         }
         
         if (playPause) {
@@ -158,7 +155,7 @@ export default function index() {
         return () => {
             clearInterval(counterRef.current)
         }
-    }, [counter, showModal, remainingSection, compledSection, activeSection, playPause, progress])
+    }, [counter, showModal, remainingSection, completedSection, activeSection, playPause, progress])
 
     useEffect(() => {
         if (!playPause) {
@@ -177,12 +174,17 @@ export default function index() {
     }, [progress, playPause, showModal])
 
     useEffect(() => {
-        if (keyboardVisible) {
-            bottomSheetRef.current?.snapToPosition("100%")
-        } else {
-            // bottomSheetRef.current?.collapse()
+        const reduxList = sessions.slots.map(each => each.id)
+        const newList = remainingSection.map(each => {
+            if (!reduxList.includes(each.id)) {
+                return each
+            }
+        }).filter(each => each !== undefined)
+
+        if (newList.length > 0) {
+            dispatch(addNewSessionOnActive(newList[0]))
         }
-    }, [keyboardVisible])
+    }, [remainingSection])
 
     return (
         <ThemedView darkColor="rgb(53, 158, 255)" style={{ flex: 1, paddingTop: insets.top }}>
@@ -209,7 +211,7 @@ export default function index() {
                 </ProgressBar>
 
                 <View style={{ gap: 15 }}>
-                    {compledSection.length > 0 &&
+                    {completedSection.length > 0 &&
                         <ThemedText style={styles.bodyText}>Time Completed: {calculateCompletedTime()}</ThemedText>
                     }
                     {activeSection &&
@@ -222,12 +224,16 @@ export default function index() {
                 <View style={styles.bottomView}>
                     <Pressable style={styles.bottomSection} onPress={() => {
                         if (remainingSection[0] !== undefined) {
-                            setCounter(5)
-                            setProgress(5)
-                            setShowModal("show")
-                            percentage.value = withTiming(1, { duration: 0}) 
+                            handleSkippedSession()
                         } else {
-                            router.replace("/(active)/summary")
+                            setActiveSession(active => {
+                                if (active) {
+                                    return { ...active, status: "skipped" }
+                                }
+
+                                return active
+                            })
+                            setCounter(NaN)
                         }
                     }}>
                         <Feather name="trash-2" size={24} color="white" />
@@ -252,184 +258,14 @@ export default function index() {
                     </Pressable>
                 </View>
             </View>
-            
-            <BottomSheet 
-                backgroundStyle={{ backgroundColor: 'rgba(19, 127, 236, 1)' }} 
-                handleIndicatorStyle={{ backgroundColor: 'rgba(255, 255, 255, .5)' }}
-                ref={bottomSheetRef}
-                snapPoints={["10%"]}
-                onChange={updateChevronAnimation}
-                enableContentPanningGesture={false}
-            >
-                {(sheetType === "tasks" || sheetType === "analytics") &&
-                    <BottomSheetView style={{ paddingHorizontal: 20 }}>
-                        <View style={styles.bottomSheetHeader}>
-                            <View style={styles.bottomSheetHeaderLeft}>
-                                <Pressable 
-                                    onPress={() => {setSheetType("tasks"); handlePresentModalPress()}} 
-                                    style={[styles.bottmSheetType, sheetType === "tasks" && styles.bottomSheetSelected]}
-                                >
-                                    <ThemedText style={{ fontSize: 14 }}>Tasks</ThemedText>
-                                </Pressable>
-                                <Pressable 
-                                    onPress={() => {setSheetType("analytics"); handlePresentModalPress()}} 
-                                    style={[styles.bottmSheetType, sheetType === "analytics" && styles.bottomSheetSelected]}
-                                >
-                                    <ThemedText style={{ fontSize: 14 }}>Analytics</ThemedText>
-                                </Pressable>
-                            </View>
-                            <Pressable onPress={() => {
-                                if (sheetPosition.value === 0) {
-                                    handlePresentModalPress()
-                                } else {
-                                    handleCloseModalPress()
-                                }
-                            }} style={[{ padding: 5 }]}>
-                                <Animated.View style={chevronAnimation}>
-                                    <Entypo name="chevron-up" size={24} color="rgba(255, 255, 255, 0.6)" />
-                                </Animated.View>
-                            </Pressable>
-                        </View>
 
-                        {sheetType === "tasks" ?
-                            <>
-                                <DraxProvider style={{ height: 300 }}>
-                                    <DraxList 
-                                        data={remainingSection}
-                                        parentDraxViewProps={{ style: { height: 300 } }}
-                                        ref={dragSheetRef}
-                                        renderItem={({ item }, itemProps) => 
-                                            <DraxListItem
-                                                itemProps={itemProps}
-                                                style={{ marginVertical: 7, borderRadius: 15 }}
-                                                draggingStyle={{ opacity: 0 }}
-                                                hoverDraggingStyle={{ borderWidth: 1, borderColor: 'rgba(255, 255, 255, .7)', transform: [{ scale: 1.05 }] }}
-                                                dragReleasedStyle={{ opacity: 0 }}
-                                                key={item.id}
-                                                longPressDelay={200}
-                                            >
-                                                <DraxView 
-                                                    key={item.id} 
-                                                    style={[styles.sheetCard, { 
-                                                        backgroundColor: item.type === "work" ? 'rgba(255, 255, 255, 0.1)' : 'rgba(126, 211, 33, 0.2)' 
-                                                    }]}
-                                                >
-                                                    <View style={styles.sheetCardSide}>
-                                                        <MaterialIcons name="drag-indicator" size={26} color="rgba(255, 255, 255, 0.6)" />
-                                                        <ThemedText style={{ marginLeft: 2 }}>{item.label}</ThemedText>
-                                                    </View>
-
-                                                    <View style={styles.sheetCardSide}>
-                                                        <Pressable style={{ padding: 5 }} onPress={() => {
-                                                            setSheetType("edit")
-                                                            setTaskType(item.type as SlotType)
-                                                            setSheeSlot(item)
-                                                        }}>
-                                                            <Feather name="edit-2" size={18} color="rgba(255, 255, 255, 0.6)" />
-                                                        </Pressable>
-                                                        <Pressable style={{ padding: 5 }} onPress={() => {
-                                                            setRemaningSection(remainingSection.filter(each => each.id !== item.id))
-                                                            setSheeSlot(item)
-                                                        }}>
-                                                            <Feather name="trash-2" size={18} color="rgba(255, 255, 255, 0.6)" />
-                                                        </Pressable>
-                                                    </View>
-                                                </DraxView>
-                                            </DraxListItem>
-                                        }
-                                        onItemReorder={({fromIndex, toIndex}) => {
-                                            const newData = [...remainingSection];
-                                            const item = newData.splice(fromIndex, 1)[0];
-                                            newData.splice(toIndex, 0, item);
-                                            setRemaningSection(newData);
-                                        }}
-                                    />
-                                </DraxProvider>
-
-                                <View style={styles.sheetButton}>
-                                    <Pressable style={styles.sheetButtonSection} onPress={() => {
-                                        setSheetType("edit")
-                                        setTaskType("work")
-                                        setSheeSlot(undefined)
-                                    }}>
-                                        <AntDesign name="plus" size={24} color="white" />
-                                        <ThemedText>Add Task</ThemedText>
-                                    </Pressable>
-                                    <Pressable style={styles.sheetButtonSection} onPress={() => {
-                                        setSheetType("edit")
-                                        setTaskType("break")
-                                    }}>
-                                        <AntDesign name="plus" size={24} color="white" />
-                                        <ThemedText>Add Break</ThemedText>
-                                    </Pressable>
-                                </View>
-
-                                <View style={{ height: insets.bottom }} />
-                            </> :
-                            <>
-                                <View style={styles.analyticsTop}>
-                                    <View style={styles.analyticsSection}>
-                                        <ThemedText style={styles.analyticsTextTitle}>Breaks Taken</ThemedText>
-                                        <ThemedText style={styles.analyticsTopText}>2</ThemedText>
-                                    </View>
-                                    <View style={styles.analyticsSection}>
-                                        <ThemedText style={styles.analyticsTextTitle}>Tasks Done</ThemedText>
-                                        <ThemedText style={styles.analyticsTopText}>75%</ThemedText>
-                                    </View>
-                                </View>
-
-                                <View style={styles.analyticsSection}>
-                                    <ThemedText style={styles.analyticsTextTitle}>Total Focus Time</ThemedText>
-                                    <ThemedText style={styles.analyticsTopText}>1h 35m</ThemedText>
-                                </View>
-
-                                <View style={[styles.analyticsTop, { marginTop: 15, marginBottom: 0 }]}>
-                                    <View style={styles.analyticsSection}>
-                                        <ThemedText style={styles.analyticsTextTitle}>Avg. Task Time</ThemedText>
-                                        <ThemedText style={styles.analyticsTopText}>23m 45s</ThemedText>
-                                    </View>
-                                    <View style={styles.analyticsSection}>
-                                        <ThemedText style={styles.analyticsTextTitle}>Avg. Break Time</ThemedText>
-                                        <ThemedText style={styles.analyticsTopText}>4m 30s</ThemedText>
-                                    </View>
-                                </View>
-
-                                <View style={{ height: insets.bottom }} />
-                            </>
-                        }
-                    </BottomSheetView>
-                }
-
-                {sheetType === "edit" &&
-                    <BottomSheetView style={{ paddingHorizontal: 20, gap: 20 }}>
-                        <SlotSheet 
-                            handleCloseModalPress={() => setSheetType("tasks")}
-                            setSheetType={setTaskType}
-                            sheetType={taskType}
-                            theme={theme}
-                            sheetSlot={sheetSlot}
-                            closeColor="rgb(255, 255, 255)"
-                            defaultBackgroundColor="rgba(255, 255, 255, 0.1)"
-                            defaultBorderColor="rgba(255, 255, 255, 0.3)"
-                            defaultContentColor="rgba(255, 255, 255, 0.3)"
-                            selectedBorderColor="rgb(255, 255, 255)"
-                            selectedContentColor="rgba(255, 255, 255, 1)"
-                            selectedBackgroundColor="rgba(255, 255, 255, 0.1)"
-                            inputBackgroundColor="rgba(255, 255, 255, 0.1)"
-                            inputBlurColor="rgba(255, 255, 255, 0.3)"
-                            inputFocusColor="rgba(255, 255, 255, 1)"
-                            placeholderColor="rgba(255, 255, 255, 0.6)"
-                            labelColor="white"
-                            cancelButtonColor='rgba(255, 255, 255, 0.2)'
-                            saveButtonColor="rgba(51, 65, 85, 0.77)"
-                            timerColor="rgba(255, 255, 255, 0.6)"
-                            onSave={() => null}
-                        />
-
-                        <View style={{ height: insets.bottom }} />
-                    </BottomSheetView>
-                }
-            </BottomSheet>
+            <ActiveBottomSheet 
+                modal={showModal} 
+                remainingSection={remainingSection} 
+                completedSection={completedSection}
+                setRemaningSection={setRemaningSection}
+                totalTime={calculateTotalTime()} 
+            />
 
             {/* Modal */}
             {showModal === "show" && 
@@ -459,6 +295,9 @@ export default function index() {
                             textStyle={{ fontWeight: 'bold' }}
                             onPress={() => {
                                 modalPercentage.value = withTiming(1, { duration: 0}) 
+                                if (playPause) {
+                                    setPlayPause(false)
+                                }
                                 setCounter(() => handleNewSession())
                             }}
                         />
@@ -482,10 +321,6 @@ export default function index() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        position: 'absolute',
-        top: 0
-    },
     headerView: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -508,10 +343,6 @@ const styles = StyleSheet.create({
         flex: 1, 
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    bigView: {
-        marginTop: 0,
-        justifyContent: 'center'
     },
     bodyTop: { 
         letterSpacing: 2, 
@@ -547,83 +378,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         borderRadius: 15,
-    },
-    bottomSheetHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20
-    },
-    bottomSheetHeaderLeft: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        flexDirection: 'row',
-        borderRadius: 8,
-        padding: 5,
-    },
-    bottmSheetType: {
-        padding: 5,
-        paddingHorizontal: 35,
-        borderRadius: 5
-    },
-    bottomSheetSelected: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)'
-    },
-    sheetCard: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15,
-        borderRadius: 15
-    },
-    sheetCardSide: {
-        flexDirection: 'row',
-        gap: 10,
-        alignItems: 'center'
-    },
-    transformChevronDown: {
-        transform: [{ rotate: '180deg' }]
-    },
-    transformChevronUp: {
-        transform: [{ rotate: '0deg' }]   
-    },
-    sheetButton: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 15,
-        marginTop: 10,
-    },
-    sheetButtonSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 15,
-        flex: 1,
-        gap: 15,
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 15,
-        fontWeight: 'bold'
-    },
-    analyticsTop: {
-        flexDirection: 'row',
-        gap: 15,
-        marginBottom: 15
-    },
-    analyticsSection: {
-        flex: 1,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 15,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        gap: 5
-    },
-    analyticsTextTitle: {
-        color: 'rgb(255, 255, 255, 0.7)',
-        fontSize: 14,
-    },
-    analyticsTopText: {
-        fontSize: 35,
-        fontWeight: 'bold',
-        lineHeight: 40
     },
     activeModal: {
         position: 'absolute',

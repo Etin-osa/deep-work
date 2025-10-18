@@ -5,6 +5,12 @@ import { getIsFirstTime } from "@/redux/slices/isFirstTimeSlice";
 import { router } from "expo-router";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
+import { configureReanimatedLogger, ReanimatedLogLevel } from "react-native-reanimated";
+
+configureReanimatedLogger({
+    level: ReanimatedLogLevel.warn,
+    strict: false, // Reanimated runs in strict mode by default
+});
 
 export default function index() {
     const isFirstTime = useAppSelector(getIsFirstTime)

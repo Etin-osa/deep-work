@@ -7,6 +7,8 @@ export type SlotCard = {
     type: SlotType;
     duration: number; 
     label: string;
+    status?: "skipped" | "completed"
+    skipTime?: number
 }
 
 type SessionType = {
@@ -30,10 +32,16 @@ const sessionSlice = createSlice({
         addNewSession: (state, action) => {
             state = action.payload
             return state
+        },
+        updateSession: (state, action) => {
+            state.slots = action.payload
+        },
+        addNewSessionOnActive: (state, action) => {
+            state.slots.push(action.payload)
         }
     }
 })
 
-export const { addNewSession } = sessionSlice.actions
+export const { addNewSession, updateSession, addNewSessionOnActive } = sessionSlice.actions
 export const getAllSessions = (state: { sessions: SessionType }) => state.sessions
 export default sessionSlice.reducer

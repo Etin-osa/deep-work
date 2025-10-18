@@ -2,18 +2,16 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { Colors } from "@/constants/theme";
 import { AntDesign, Entypo, MaterialIcons } from "@expo/vector-icons";
-import { BottomSheetView } from "@gorhom/bottom-sheet";
 import LargeButton from "./large-button";
 import { ThemedText } from "./themed-text";
 import { SlotCard, SlotType } from "@/redux/slices/sessionSlice";
 
 export default function SlotSheet({ 
-    theme, sheetType, closeColor, sheetSlot, setSheetType, handleCloseModalPress, onSave,
+    sheetType, closeColor, sheetSlot, setSheetType, handleCloseModalPress, onSave,
     defaultBackgroundColor, defaultBorderColor, defaultContentColor, selectedBackgroundColor, 
     selectedContentColor, selectedBorderColor, labelColor, inputBackgroundColor, inputFocusColor, 
     cancelButtonColor, saveButtonColor, placeholderColor, inputBlurColor, timerColor
-}: { 
-    theme: "dark" | "light"
+}: {
     sheetSlot: SlotCard | undefined
     sheetType: SlotType
     setSheetType: React.Dispatch<React.SetStateAction<SlotType>>

@@ -13,16 +13,7 @@ import { AntDesign, Entypo, Feather, FontAwesome, MaterialCommunityIcons, Materi
 import LargeButton from "@/components/large-button";
 import useKeyboard from "@/hooks/useKeyboard";
 import { useDispatch } from "react-redux";
-import { addNewSession } from "@/redux/slices/sessionSlice";
-
-type SlotType = 'work' | 'break';
-
-type SlotCard = {
-    id: string;
-    type: SlotType;
-    duration: number; 
-    label: string;
-}
+import { addNewSession, SlotCard, SlotType } from "@/redux/slices/sessionSlice";
 
 export default function slot() {
     const theme = useColorScheme() ?? 'light'
@@ -176,8 +167,8 @@ export default function slot() {
     const handleSlots = () => {
         dispatch(addNewSession({
             label: params.label,
-            hour: params.hour,
-            minute: params.minute,
+            hour: params.hours,
+            minute: params.minutes,
             slots: slotList
         }))
         router.replace("/(active)")
@@ -394,7 +385,6 @@ export default function slot() {
                             setSheetType={setSheetType}
                             sheetSlot={sheetSlot}
                             sheetType={sheetType}
-                            theme={theme}
                             closeColor={Colors[theme].placeholder}
                             selectedBorderColor="rgb(19, 127, 236)"
                             selectedBackgroundColor={Colors.secondaryColor}
