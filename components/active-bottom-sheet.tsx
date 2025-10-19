@@ -88,7 +88,7 @@ export default function ActiveBottomSheet({ modal, completedSection, totalTime, 
         }
         const completedTasks = completedSection.map(each => {
             if (each.id.includes('w-')) {
-                return each.skipTime ? each.skipTime : each.duration
+                return each.skipTime !== undefined ? each.skipTime : each.duration
             }
             return 0
         }).reduce((a, b) => a+b)
@@ -103,7 +103,7 @@ export default function ActiveBottomSheet({ modal, completedSection, totalTime, 
     
     const calculateBreaks = () => {
         return completedSection.map(each => {
-            if (each.id.includes('b-') && !each.skipTime) { return 1 }
+            if (each.id.includes('b-') && each.skipTime === undefined) { return 1 }
         }).filter(each => each !== undefined).length
     }
 

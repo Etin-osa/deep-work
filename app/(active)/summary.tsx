@@ -8,18 +8,48 @@ import { Colors } from "@/constants/theme";
 import LargeButton from "@/components/large-button";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { useSharedValue } from "react-native-reanimated";
+import { Easing, useSharedValue, withTiming } from "react-native-reanimated";
 import { useAppSelector } from "@/redux/hooks/useAppSelector";
 import { getAllSessions } from "@/redux/slices/sessionSlice";
+import { presentTime } from "@/constants/utils";
 
 export default function summary() {
     const insets = useSafeAreaInsets()
     const sessions = useAppSelector(getAllSessions)
     const deviceWidth = Dimensions.get("screen").width
-    const percentage = useSharedValue(0)
+    const percentage = useSharedValue(1)
+
+    const calculateTotalTime = () => sessions.slots.map(each => {
+        return each.skipTime ?? each.duration
+    }).reduce((a, b) => (a ?? 0) + (b ?? 0))
+
+    const calculateTasksTime = () => sessions.slots.map(each => {
+        if (each.id.includes('w-')) {
+            return each.skipTime ?? each.duration
+        }
+        return 0
+    }).reduce((a, b) => (a ?? 0) + (b ?? 0))
+
+    const calculateBreaks = () => sessions.slots.map(each => {
+        if (each.id.includes('b-')) {
+            return each.skipTime ?? each.duration
+        }
+        return 0
+    }).reduce((a, b) => (a ?? 0) + (b ?? 0))
 
     useEffect(() => {
+        const totalTime = calculateTotalTime()
+        const breakList = calculateBreaks()
+
+        const timeout = setTimeout(() => {
+            percentage.value = withTiming(
+                (breakList ?? 0) / totalTime, 
+                { duration: 1500, easing: Easing.ease }
+            )
+        }, 100);
+
         console.log(sessions)
+        return () => clearTimeout(timeout)
     }, [])
 
     return (
@@ -39,13 +69,13 @@ export default function summary() {
 
                 <ThemedView darkColor="#1A242E" style={{ borderRadius: 15, paddingVertical: 10, marginBottom: 30 }}>
                     <ProgressBar 
-                        backgroundColor={Colors.accentColor} 
-                        progressBarColor="#24D397" 
+                        backgroundColor="#24D397"
+                        progressBarColor={Colors.accentColor}  
                         percentage={percentage}
                     >
                         <View>
-                            <ThemedText darkColor="rgb(255, 255, 255, 0.8)" style={{ textAlign: 'center', fontSize: 14 }}>Total time</ThemedText>
-                            <ThemedText style={styles.timer}>2h 15m</ThemedText>
+                            <ThemedText darkColor="rgba(255, 255, 255, 0.8)" style={{ textAlign: 'center', fontSize: 14 }}>Total time</ThemedText>
+                            <ThemedText style={styles.timer}>{presentTime(calculateTotalTime() * 60)}</ThemedText>
                         </View>
                     </ProgressBar>
                 </ThemedView>
@@ -56,24 +86,24 @@ export default function summary() {
                             <Entypo name="laptop" size={22} color="rgb(147, 197, 253)" />
                             <ThemedText style={styles.timerTitle}>Focus Time</ThemedText>
                         </View>
-                        <ThemedText style={styles.timerText}>1h 45m</ThemedText>
+                        <ThemedText style={styles.timerText}>{presentTime(calculateTasksTime() * 60)}</ThemedText>
                     </ThemedView>
                     <ThemedView darkColor="#1A242E" style={styles.timerInfoSection}>
                         <View style={styles.eachTimerSection}>
                             <MaterialIcons name="coffee" size={22} color="rgb(134, 239, 172)" />
                             <ThemedText style={styles.timerTitle}>Breaks</ThemedText>
                         </View>
-                        <ThemedText style={styles.timerText}>3</ThemedText>
+                        <ThemedText style={styles.timerText}>{presentTime(calculateBreaks() * 60)}</ThemedText>
                     </ThemedView>
                 </ThemedView>
 
                 <ThemedView darkColor="#1A242E" style={styles.taskInfo}>
                     <ThemedText style={{ fontSize: 18, color: 'rgba(255, 255, 255, 0.7)' }}>Tasks</ThemedText>
                     <View style={{ gap: 20 }}>
-                        {["Projects proposal", "Design Mockups", "Client Meeting"].map((each, index) => 
+                        {sessions.slots.map((each, index) => each.type === "work" &&
                             <View style={styles.taskSection} key={index}>
-                                <ThemedText>{each}</ThemedText>
-                                {index === 2 ?
+                                <ThemedText>{each.label}</ThemedText>
+                                {each.skipTime !== undefined ?
                                     <ThemedText style={{ fontSize: 14, color: '#ef4444' }}>Skipped</ThemedText> :
                                     <ThemedText style={{ fontSize: 14, color: '#24D397' }}>Completed</ThemedText> 
                                 }
@@ -89,7 +119,8 @@ export default function summary() {
                 style={{
                     position: 'absolute',
                     bottom: 0,
-                    width: deviceWidth
+                    width: deviceWidth,
+                    paddingBottom: insets.bottom + 10,
                 }}
             >
                 <LargeButton 
@@ -97,7 +128,6 @@ export default function summary() {
                     buttonStyle={{
                         backgroundColor: "#24D397",
                         borderRadius: 15,
-                        marginBottom: 10
                     }}
                     textStyle={{ fontWeight: 'bold', color: Colors.dark.background }}
                     onPress={() => router.replace("/(home_tabs)")}

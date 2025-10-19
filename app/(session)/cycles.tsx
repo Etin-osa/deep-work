@@ -187,7 +187,8 @@ export default function slot() {
     }, [slotList])
 
     useEffect(() => {
-        generateCycles()
+        // generateCycles()
+        router.replace("/(active)/summary")
     }, [])
 
     return (

@@ -1,4 +1,4 @@
-import { Dimensions } from "react-native";
+import { Dimensions, useColorScheme } from "react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,9 +16,9 @@ import { addNewSessionOnActive, getAllSessions, SlotCard, updateSession } from "
 import ActiveBottomSheet from "@/components/active-bottom-sheet";
 import { useAppDispatch } from "@/redux/hooks/useAppDispatch";
 import { presentTime } from "@/constants/utils";
-import { actions } from "react-native-drax/build/hooks/useDraxState";
 
 export default function index() {
+    const theme = useColorScheme() ?? 'dark'
     const sessions = useAppSelector(getAllSessions)
     const insets = useSafeAreaInsets()
     const dispatch = useAppDispatch()
@@ -144,7 +144,6 @@ export default function index() {
             }, 1000);
         } else {
             handleCompletedSession()
-            
         }
         
         if (playPause) {
@@ -159,13 +158,13 @@ export default function index() {
 
     useEffect(() => {
         if (!playPause) {
-            if (showModal === "") {
+            if (showModal === "" || showModal === "end") {
                 handleProgressBar(percentage)
             } else if (showModal === "show") {
                 handleProgressBar(modalPercentage)
             }
         } else {
-            if (showModal === "") {
+            if (showModal === "" || showModal === "end") {
                 cancelAnimation(percentage)
             } else {
                 cancelAnimation(modalPercentage)
@@ -190,7 +189,7 @@ export default function index() {
         <ThemedView darkColor="rgb(53, 158, 255)" style={{ flex: 1, paddingTop: insets.top }}>
             <View style={styles.headerView}>
                 <ThemedText style={styles.headerLabel}>{sessions.label}</ThemedText>
-                <Pressable style={styles.headerButton}>
+                <Pressable style={styles.headerButton} onPress={() => {setShowModal("end"); setPlayPause(true)}}>
                     <ThemedText style={{ fontWeight: 'bold' }}>Stop</ThemedText>
                 </Pressable>
             </View>
@@ -228,7 +227,7 @@ export default function index() {
                         } else {
                             setActiveSession(active => {
                                 if (active) {
-                                    return { ...active, status: "skipped" }
+                                    return { ...active, status: "skipped", skipTime: active.duration - counter }
                                 }
 
                                 return active
@@ -316,6 +315,52 @@ export default function index() {
                     </ThemedView>
                 </ThemedView>
             }
+
+            {showModal === "end" &&
+                <ThemedView darkColor="rgba(40, 113, 182, 1)"  style={styles.modalView}>
+                    <ThemedView darkColor={Colors.accentColor} style={styles.modal}>
+                        <ThemedText style={styles.modalHeader}>Are you sure you want to stop this session?</ThemedText>
+
+                        <ThemedText darkColor={Colors[theme].inputLabel} style={styles.modalParagraph}>   
+                            All progress up to this point will be saved
+                        </ThemedText>
+
+                        <View style={{ gap: 10, width: '100%' }}>
+                            <LargeButton 
+                                text="Stop Session" 
+                                buttonStyle={{
+                                    backgroundColor: "rgba(185, 19, 19, 0.8)",
+                                    borderRadius: 30,
+                                }}
+                                textStyle={{ fontWeight: 'bold' }}
+                                onPress={() => {
+                                    setActiveSession(active => {
+                                        if (active) {
+                                            return { ...active, status: "skipped", skipTime: active.duration - counter }
+                                        }
+
+                                        return active
+                                    })
+                                    setCounter(NaN)
+                                }}
+                            />
+                            <LargeButton 
+                                text="Cancel" 
+                                buttonStyle={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                    borderRadius: 30,
+                                }}
+                                textStyle={{ fontWeight: 'bold' }}
+                                onPress={() => { 
+                                    setShowModal("") 
+                                    setPlayPause(false) 
+                                    setProgress(counter) 
+                                }}
+                            />
+                        </View>
+                    </ThemedView>
+                </ThemedView>
+            }
         </ThemedView>
     );
 }
@@ -395,5 +440,32 @@ const styles = StyleSheet.create({
         color: 'rgb(156, 163, 175)',
         fontSize: 20,
         fontWeight: 'bold'
-    }
+    },
+    modalView: {
+        position: 'absolute',
+        top: 0, left: 0,
+        height: '100%',
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 10
+    },
+    modal: {
+        padding: 30,
+        width: '100%',
+        gap: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 20
+    },
+    modalHeader: {
+        textAlign: 'center',
+        fontSize: 25,
+        fontWeight: 'bold',
+        lineHeight: 30
+    },
+    modalParagraph: {
+        textAlign: 'center',
+        width: '80%'
+    },
 });
