@@ -7,7 +7,7 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather, FontAwesome6, MaterialIcons } from "@expo/vector-icons";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 
 const today = toDateId(new Date());
@@ -53,10 +53,6 @@ export default function stats() {
                                         <Calendar.Item.Day theme={{
                                             today: ({ }) => ({
                                                 container: {
-                                                    borderTopRightRadius: 100,
-                                                    borderTopLeftRadius: 100,
-                                                    borderBottomRightRadius: 100,
-                                                    borderBottomLeftRadius: 100,
                                                     borderWidth: 0
                                                 }
                                             })

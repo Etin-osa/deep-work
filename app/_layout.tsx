@@ -11,6 +11,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Provider } from 'react-redux';
 import { persistor, store } from '@/redux/store';
 import { PersistGate } from 'redux-persist/integration/react';
+import { NotificationProvider } from '@/hooks/NotificionContext';
 
 export default function RootLayout() {
     const colorScheme = useColorScheme();
@@ -20,26 +21,28 @@ export default function RootLayout() {
     }, [])
 
     return (
-        <Provider store={store}>
-           <PersistGate loading={null} persistor={persistor}> 
-                <GestureHandlerRootView>
-                    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                        <KeyboardProvider>
-                            <Stack>
-                                <Stack.Screen name="index" options={{ headerShown: false }} />
-                                <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-                                <Stack.Screen name="login" options={{ headerShown: false }} />
-                                <Stack.Screen name="(session)" options={{ headerShown: false }} />
-                                <Stack.Screen name="(active)" options={{ headerShown: false }} />
-                                <Stack.Screen name="(home)" options={{ headerShown: false }} />
-                                <Stack.Screen name="(home_tabs)" options={{ headerShown: false }} />
-                            </Stack>
-                            <StatusBar style="light" />
-                        </KeyboardProvider>
-                    </ThemeProvider>
-                </GestureHandlerRootView>
-            </PersistGate>
-        </Provider>
+        <NotificationProvider>
+            <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}> 
+                    <GestureHandlerRootView>
+                        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                            <KeyboardProvider>
+                                <Stack>
+                                    <Stack.Screen name="index" options={{ headerShown: false }} />
+                                    <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                                    <Stack.Screen name="login" options={{ headerShown: false }} />
+                                    <Stack.Screen name="(session)" options={{ headerShown: false }} />
+                                    <Stack.Screen name="(active)" options={{ headerShown: false }} />
+                                    <Stack.Screen name="(home)" options={{ headerShown: false }} />
+                                    <Stack.Screen name="(home_tabs)" options={{ headerShown: false }} />
+                                </Stack>
+                                <StatusBar style="light" />
+                            </KeyboardProvider>
+                        </ThemeProvider>
+                    </GestureHandlerRootView>
+                </PersistGate>
+            </Provider>
+        </NotificationProvider>
     );
 }
  

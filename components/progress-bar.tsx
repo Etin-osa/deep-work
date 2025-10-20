@@ -1,12 +1,12 @@
-import { StyleSheet, View } from "react-native";
+import { Dimensions, StyleSheet, View } from "react-native";
 import React from "react";
 import Animated, { SharedValue, useAnimatedProps } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle)
 
-const CIRCLE_LENGTH = 800
-const SVG_SIZE = 300
+const CIRCLE_LENGTH = 900
+const SVG_SIZE = 320
 
 export default function progressBar({ progressBarColor, backgroundColor, percentage, children, radius }: { 
     progressBarColor: string
@@ -15,13 +15,14 @@ export default function progressBar({ progressBarColor, backgroundColor, percent
     percentage: SharedValue<number>
     radius?: number
 }) {
+    const deviceWidth = Dimensions.get('window').width
     const RADIUS = radius ? radius / (2 * Math.PI) : CIRCLE_LENGTH / (2 * Math.PI)
     const animatedPercentage = useAnimatedProps(() => ({
         strokeDashoffset: CIRCLE_LENGTH * percentage.value
     }))
 
     return (
-        <View style={styles.svgCover}>
+        <View style={[styles.svgCover, { width: deviceWidth }]}>
             <View style={styles.svgCoverCenter}>
                 {children}
             </View>
@@ -42,7 +43,7 @@ export default function progressBar({ progressBarColor, backgroundColor, percent
                     strokeLinejoin="round"
                     strokeLinecap="round"
                     stroke={progressBarColor}
-                    strokeWidth={23}
+                    strokeWidth={24}
                     strokeDasharray={CIRCLE_LENGTH}
                     animatedProps={animatedPercentage}
                     transform={`rotate(-90 ${SVG_SIZE / 2} ${SVG_SIZE / 2})`}
@@ -56,7 +57,8 @@ const styles = StyleSheet.create({
     svgCover: {
         position: 'relative',
         marginHorizontal: 'auto',
-        width: 300,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     svgCoverCenter: {
         position: 'absolute',

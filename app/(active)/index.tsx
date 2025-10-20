@@ -204,7 +204,7 @@ export default function index() {
                     progressBarColor="rgba(255, 255, 255, 0.9)"
                     percentage={percentage}
                 >
-                    <ThemedText style={{ fontSize: 50, fontWeight: 'bold', lineHeight: 70}}>
+                    <ThemedText style={{ fontSize: 60, fontWeight: 'bold', lineHeight: 70}}>
                         {Number.isNaN(counter) ? "00:00" : formatTime(counter)}
                     </ThemedText>
                 </ProgressBar>
