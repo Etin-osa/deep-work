@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { registerForPushNotificationsAsync } from '@/utils/registerForPushNotificationsAsync';
+import { registerForPushNotificationsAsync } from '@/utils/register-for-push-notifications-async';
 
 type NotificationData = {
     title?: string;
@@ -14,6 +14,7 @@ type NotificationContextType = {
     notification: Notifications.Notification | null;
     schedulePushNotification: (content: NotificationData, trigger?: Notifications.NotificationTriggerInput) => Promise<string>;
     cancelNotification: (notificationId: string) => Promise<void>;
+    requestNotification: () => Promise<void>
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -42,9 +43,12 @@ export function NotificationProvider({ children }: { children: any }) {
         await Notifications.cancelScheduledNotificationAsync(notificationId);
     };
 
-    useEffect(() => {
-        registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
+    const requestNotification = async () => {
+        const token = await registerForPushNotificationsAsync()
+        setExpoPushToken(token)
+    }
 
+    useEffect(() => {
         Notifications.setNotificationHandler({
             handleNotification: async () => ({
                 shouldShowBanner: true,
@@ -78,7 +82,13 @@ export function NotificationProvider({ children }: { children: any }) {
     }, []);
 
     return (
-        <NotificationContext.Provider  value={{ expoPushToken, notification, schedulePushNotification, cancelNotification }}>
+        <NotificationContext.Provider value={{ 
+            expoPushToken, 
+            notification, 
+            requestNotification, 
+            schedulePushNotification, 
+            cancelNotification 
+        }}>
             {children}
         </NotificationContext.Provider>
     )

@@ -1,6 +1,7 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 export async function registerForPushNotificationsAsync() {
     try {
@@ -23,9 +24,16 @@ export async function registerForPushNotificationsAsync() {
         if (finalStatus !== 'granted') {
             throw new Error("Permission not granted for push notifications!");
         }
-        const token = (await Notifications.getExpoPushTokenAsync()).data;
-        return token;
+
+        const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+        if (!projectId) {
+            throw new Error('Project ID not found');
+        }
+
+        const token = (await Notifications.getExpoPushTokenAsync({ projectId }));
+        console.log({ token })
+        return token.data;
     } catch (error) {
-        throw new Error("Failed to get push token for push notification!");
+        throw error
     }
 }

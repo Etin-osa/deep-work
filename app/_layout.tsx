@@ -11,7 +11,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Provider } from 'react-redux';
 import { persistor, store } from '@/redux/store';
 import { PersistGate } from 'redux-persist/integration/react';
-import { NotificationProvider } from '@/hooks/NotificionContext';
+import { NotificationProvider } from '@/hooks/notification-context';
 
 export default function RootLayout() {
     const colorScheme = useColorScheme();
@@ -23,7 +23,7 @@ export default function RootLayout() {
     return (
         <NotificationProvider>
             <Provider store={store}>
-            <PersistGate loading={null} persistor={persistor}> 
+                <PersistGate loading={null} persistor={persistor}> 
                     <GestureHandlerRootView>
                         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                             <KeyboardProvider>

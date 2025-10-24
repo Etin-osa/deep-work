@@ -14,8 +14,10 @@ import LargeButton from "@/components/large-button";
 import useKeyboard from "@/hooks/useKeyboard";
 import { useDispatch } from "react-redux";
 import { addNewSession, SlotCard, SlotType } from "@/redux/slices/sessionSlice";
+import { useNotifications } from "@/hooks/notification-context";
 
 export default function slot() {
+    const notification = useNotifications()
     const theme = useColorScheme() ?? 'light'
     const dispatch = useDispatch()
     const deviceHeight = Dimensions.get("screen").height
@@ -164,7 +166,9 @@ export default function slot() {
         bottomSheetModalRef.current?.forceClose()
     }
 
-    const handleSlots = () => {
+    const handleSlots = async () => {
+        await notification.requestNotification()
+        
         dispatch(addNewSession({
             label: params.label,
             hour: params.hours,
