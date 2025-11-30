@@ -9,115 +9,71 @@ import SlotSheet from "@/components/slot-sheet";
 import { Colors } from "@/constants/theme";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
-import { AntDesign, Entypo, Feather, FontAwesome, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import LargeButton from "@/components/large-button";
+import { AntDesign, Entypo, Feather, MaterialIcons } from "@expo/vector-icons";
 import useKeyboard from "@/hooks/useKeyboard";
 import { useDispatch } from "react-redux";
 import { addNewSession, SlotCard, SlotType } from "@/redux/slices/sessionSlice";
-import { useNotifications } from "@/hooks/notification-context";
+import LargeButton from "@/components/large-button";
+
+const timeStyle = {
+    focus: {
+        work: 90,
+        break: 0
+    },
+    pomodoro: {
+        work: 25,
+        break: 5
+    },
+    quick: {
+        work: 15,
+        break: 3
+    },
+    study: {
+        work: 50,
+        break: 10
+    },
+    custom: {
+        work: 40,
+        break: 10
+    }
+}
 
 export default function slot() {
-    const notification = useNotifications()
     const theme = useColorScheme() ?? 'light'
     const dispatch = useDispatch()
     const deviceHeight = Dimensions.get("screen").height
     const params = useLocalSearchParams()
     const { keyboardVisible } = useKeyboard()
-    const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+    const bottomSheetModalRef = useRef<BottomSheetModal>(null)
+
+    const [displayTime, setDisplayTime] = useState("")
     const [slotList, setSlotList] = useState<SlotCard[]>([])
-    const [extraTime, setExtraTime] = useState(0)
     const [sheetType, setSheetType] = useState<SlotType>("work")
-    const [showModal, setShowModal] = useState("")
     const [sheetSlot, setSheeSlot] = useState<SlotCard | undefined>()
 
     function makeId(prefix = '') {
         return prefix + Math.random().toString(36).slice(2, 9);
     }
 
-    const checkWork = () => {
-        switch (params.mode) {
-            case "pomodoro":
-                return 25;
-            case "study":
-                return 50
-            default:
-                return 30;
-        }
-    }
-
-    const checkBreak = () => {
-        switch (params.mode) {
-            case "pomodoro":
-                return 5;
-            case "study":
-                return 10
-            default:
-                return 5;
-        }
-    }
-
-    const presentTime = () => {
-        const totalTime = (parseInt(params.hours as string) * 60) + parseInt(params.minutes as string)
-        let hoursDom = Math.floor(totalTime / 60);
-        let minutesDom = Math.round(totalTime - (60 * hoursDom))
-        const isPlural = hoursDom > 1 ? ' hours' : ' hour'
-
-        return `${hoursDom > 0 ? hoursDom + isPlural : ''}${minutesDom > 0 ? ' ' + minutesDom + ' minutes' : ''}`
-    }
-
     const generateCycles = useCallback(() => {
-        const slots: SlotCard[] = []
-        const totalMinutes = (parseInt(params.hours as string) * 60) + parseInt(params.minutes as string)
+        const selectedStyle = timeStyle[params.mode as keyof typeof timeStyle]
+        const slots: SlotCard[] = [{
+            id: makeId('w-'),
+            type: 'work',
+            duration: selectedStyle.work,
+            label: 'Work',
+        }]
 
-        if (totalMinutes <= 29 || params.mode === "focus" || (params.mode === "custom" && totalMinutes <= 34)) {
-            slots.push({
-                id: makeId('w-'),
-                type: 'work',
-                duration: totalMinutes,
-                label: 'Work',
-            })
-
-            setSlotList(slots)
-            return;
-        }
-
-        const cycleWork = checkWork()
-        const cycleBreak = checkBreak()
-        const cycleLength = cycleWork + cycleBreak // Average cycle length
-        const cycles = Math.floor(totalMinutes / cycleLength) // Number of cycles in totalMinutes
-        const usedByCycles = cycles * cycleLength // totalMinutes of usedTime
-        let remaining = Math.round(totalMinutes - usedByCycles);
-
-        Array.from(Array(cycles).keys()).forEach(() => {
-            slots.push({
-                id: makeId('w-'),
-                type: 'work',
-                duration: cycleWork,
-                label: 'Work',
-            })
+        if (selectedStyle.break > 0) {
             slots.push({
                 id: makeId('b-'),
                 type: 'break',
-                duration: cycleBreak,
+                duration: selectedStyle.break,
                 label: 'Break',
             })
-        })
-        
-        if (remaining > 0) { 
-            const lastType = slots[slots.length - 1].type
-            const prefix = lastType === 'work' ? 'b-' : 'w-' 
-            const label = lastType === 'work' ? `Break`:  `Work`
-
-            slots.push({
-                id: makeId(prefix),
-                type: lastType === "work" ? "break" : "work",
-                duration: remaining,
-                label,
-            });
         }
 
         setSlotList(slots)
-        return;
     }, [slotList])
 
     const handlePresentModalPress = useCallback(() => {
@@ -131,13 +87,6 @@ export default function slot() {
     const handleItem = (id: string) => {
         const newList = slotList.filter(each => each.id !== id)
         setSlotList(newList)
-    }
-
-    const calculateExtraTime = () => {
-        const totalMinutes = (parseInt(params.hours as string) * 60) + parseInt(params.minutes as string)
-        const slotDuration = slotList.map(slot => slot.duration).reduce((a, b) => a + b, 0)
-
-        setExtraTime(slotDuration - totalMinutes)
     }
 
     const handleOnSaveSlot = (label: string, duration: number) => {
@@ -166,9 +115,7 @@ export default function slot() {
         bottomSheetModalRef.current?.forceClose()
     }
 
-    const handleSlots = async () => {
-        await notification.requestNotification()
-        
+    const handleSlots = async () => {        
         dispatch(addNewSession({
             label: params.label,
             hour: params.hours,
@@ -187,12 +134,16 @@ export default function slot() {
     }, [keyboardVisible])
 
     useEffect(() => {
-        calculateExtraTime()
+        const totalTime = slotList.map(slot => slot.duration).reduce((a, b) => a + b, 0)
+        let hoursDom = Math.floor(totalTime / 60);
+        let minutesDom = Math.round(totalTime - (60 * hoursDom))
+        const isPlural = hoursDom > 1 ? ' hours' : ' hour'
+
+        setDisplayTime(`${hoursDom > 0 ? hoursDom + isPlural : ''}${minutesDom > 0 ? ' ' + minutesDom + ' min' : ''}`)
     }, [slotList])
 
     useEffect(() => {
         generateCycles()
-        // router.replace("/(active)")
     }, [])
 
     return (
@@ -201,37 +152,15 @@ export default function slot() {
                 <Pressable onPress={() => router.back()}>
                     <Feather name="arrow-left" size={30} color="white" />
                 </Pressable>
-                <ThemedText style={styles.headerLabel}>{params.label}</ThemedText>
                 <Pressable>
                     <ThemedText darkColor={Colors.accentColor} style={{ fontSize: 18, fontWeight: '600' }}>Save</ThemedText>
                 </Pressable>
             </ThemedView>
 
             <ThemedView style={styles.timeView}>
-                <ThemedText style={{ 
-                    fontSize: extraTime === 0 ? 25 : 18, 
-                    color: extraTime === 0 ? 'white' : Colors[theme].placeholder 
-                }}>
-                    {presentTime()}
+                <ThemedText style={styles.timeViewTitle}>
+                    {displayTime}
                 </ThemedText>
-                {extraTime !== 0 &&
-                    <ThemedView style={styles.extraTime}>
-                        <ThemedView style={{ transform: [{ translateY: extraTime > 0 ? -5 : -10 }] }}>
-                            <FontAwesome 
-                                name={extraTime > 0 ? "plus" : "minus"} 
-                                size={30} 
-                                color={extraTime > 0 ? 'rgb(74, 222, 128)' : "rgb(222, 74, 74)" }
-                            />
-                        </ThemedView>
-                        <ThemedText style={[styles.extraTimeTitle, {  
-                            color: extraTime > 0 ? 'rgb(74, 222, 128)' : "rgb(222, 74, 74)",
-                            marginRight: 10
-                        }]}>
-                            {Math.abs(extraTime)}
-                        </ThemedText>
-                        <ThemedText style={[{ color: Colors[theme].inputLabel }, styles.extraMin]}>min</ThemedText>
-                    </ThemedView>
-                }
             </ThemedView>
 
             <DraxProvider>
@@ -312,50 +241,9 @@ export default function slot() {
                     marginHorizontal: 'auto'
                 }}
                 onPress={() => {
-                    if (extraTime !== 0) {
-                        setShowModal("Adjust Time")
-                    } else {
-                        handleSlots()
-                    }
+                    handleSlots()
                 }}
             />
-
-            {showModal.length > 0 &&
-                <ThemedView darkColor="rgb(0, 0, 0)" style={styles.modalView}>
-                    <ThemedView darkColor="rgb(17, 26, 34)" style={styles.modal}>
-                        <View style={styles.modalIconView}>
-                            <MaterialCommunityIcons name="information-outline" size={40} color={Colors.accentColor} />
-                        </View>
-
-                        <ThemedText style={styles.modalHeader}>Time Mismatch</ThemedText>
-
-                        <ThemedText darkColor={Colors[theme].inputLabel} style={styles.modalParagraph}>   
-                            Your planned activities are 10 minutes shorter than your total session time. Would you like to go back and adjust session layout or start the session?
-                        </ThemedText>
-
-                        <View style={{ gap: 15, width: '100%' }}>
-                            <LargeButton 
-                                text="Adjust Session Layout" 
-                                buttonStyle={{
-                                    backgroundColor: Colors.accentColor,
-                                    borderRadius: 30,
-                                }}
-                                textStyle={{ fontWeight: 'bold' }}
-                                onPress={() => setShowModal("")}
-                            />
-                            <LargeButton 
-                                text="Start Session Anyway" 
-                                buttonStyle={{
-                                    backgroundColor: 'rgb(51, 65, 85)',
-                                    borderRadius: 30,
-                                }}
-                                textStyle={{ fontWeight: 'bold' }}
-                                onPress={handleSlots}
-                            />
-                        </View>
-                    </ThemedView>
-                </ThemedView>
-            }
 
             <BottomSheetModalProvider>
                 <BottomSheetModal 
@@ -425,30 +313,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         alignItems: 'center'
     },
-    headerLabel: { 
-        fontSize: 25, 
-        lineHeight: 50,
-        fontWeight: '600'
-    },
     timeView: {
         alignItems: 'center',
         justifyContent: 'center',
         marginVertical: 40
     },
-    extraTime: { 
-        flexDirection: 'row',
-        // gap: 10,
-        marginTop: 5,
-        alignItems: 'flex-end'
-    },
-    extraTimeTitle: {
-        fontSize: 60,
+    timeViewTitle: {
+        fontSize: 35,
         lineHeight: 60,
         fontWeight: 'bold'
-    },
-    extraMin: { 
-        fontSize: 25,
-        transform: [{ translateY: -7 }]
     },
     card: {
         flexDirection: 'row',
@@ -499,88 +372,11 @@ const styles = StyleSheet.create({
         height: '100%',
         width: '130%'
     },
-    bottomType: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 20,
-    },
-    eachBottomType: {
-        borderWidth: 1,
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'row',
-        paddingVertical: 15,
-        borderRadius: 15,
-        gap: 15
-    },
     input: {
         fontSize: 16,
         color: 'white',
         paddingHorizontal: 15,
         borderRadius: 15,
         height: 55
-    },
-    sheetTimer: {
-        flexDirection: 'row',
-        gap: 15
-    },
-    numberInputView: {
-        borderRadius: 15,
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        flexDirection: 'row',
-        flex: 1,
-    },
-    numberInput: {
-        textAlign: 'center',
-        fontSize: 40,
-        flex: 1,
-        fontWeight: "bold",
-        color: 'white'
-    },
-    numberInputSection: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    sheetBottomView: {
-        flexDirection: 'row',
-        gap: 15,
-        marginTop: 20
-    },
-    modalView: {
-        position: 'absolute',
-        top: 0, left: 0,
-        height: '100%',
-        width: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 10
-    },
-    modal: {
-        padding: 30,
-        width: '100%',
-        gap: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 20
-    },
-    modalIconView: { 
-        padding: 15, 
-        borderRadius: 100, 
-        marginBottom: 15,
-        backgroundColor: Colors.secondaryColor
-    },
-    modalHeader: {
-        textAlign: 'center',
-        fontSize: 30,
-        fontWeight: 'bold'
-    },
-    modalParagraph: {
-        textAlign: 'center',
-        width: '80%'
     },
 });

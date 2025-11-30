@@ -21,8 +21,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.etin_osa.deepwork",
-      "softwareKeyboardLayoutMode": "pan",
-      "googleServicesFile": "./google-services.json"
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "static",

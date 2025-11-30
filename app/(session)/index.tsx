@@ -1,218 +1,175 @@
-import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
-import { ThemedView } from "@/components/themed-view";
-import { ThemedText } from "@/components/themed-text";
-import { TextInput } from "react-native-gesture-handler";
-import { AntDesign } from "@expo/vector-icons";
-import { Colors } from "@/constants/theme";
-import LargeButton from "@/components/large-button";
+import { MaterialCommunityIcons, MaterialIcons, SimpleLineIcons } from '@expo/vector-icons';
 import { router } from "expo-router";
+import React from "react";
+import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
 
-export default function custom() {
-    const theme = useColorScheme() ?? 'dark'
-    const minuteRef = useRef<TextInput | null>(null)
-    const [alert, setAlert] = useState<"name" | "time" | "time-error" | "name-error" | "">("")
-    const [hours, setHours] = useState("01")
-    const [minutes, setMinutes] = useState("00")
-    const [label, setLabel] = useState("Exercise")
-    const [textSelection, setTextSelection] = useState<{ start: number, end: number } | undefined>()
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Colors } from "@/constants/theme";
 
-    const handleRoutes = () => {
-        const checkTime = (parseInt(hours) * 60) + parseInt(minutes)
-        if (checkTime <= 20) {
-            router.push({ 
-                pathname: "/(session)/cycles", 
-                params: { label, hours, minutes, mode: "custom" }
-            })
-        } else {
-            router.push({ 
-                pathname: "/(session)/custom", 
-                params: { label, hours, minutes }
-            })
-        }
-    }
+export default function index() {
+    const theme = useColorScheme() ?? 'light'
 
-    useEffect(() => {
-        router.push({ pathname: "/(session)/cycles", params: { label, hours, minutes, mode: "pomodoro" }})
-    }, [])
+    // useEffect(() => {
+    //     router.push("/(session)/custom")
+    // }, [])
 
     return (
-        <ThemedView style={styles.container}>
-            <ThemedView style={styles.containerTop}>
-                <ThemedView style={styles.containerTopLeft}>
-                    <ThemedText darkColor={Colors[theme].inputLabel}>Name *</ThemedText>
-                    <TextInput 
-                        placeholder="e.g., Morning Study"
-                        placeholderTextColor={Colors[theme].placeholder}
-                        defaultValue="Exercise"
-                        style={[styles.input, { 
-                            backgroundColor: Colors[theme].inputBg,
-                            borderColor: alert === "name" ? 'rgba(82, 104, 136, 1)' : alert === "name-error" 
-                                ? Colors.inputError : Colors[theme].border,
-                            borderWidth: 1
-                        }]}
-                        onChangeText={(text) => setLabel(text)}
-                        onFocus={() => setAlert("name")}
-                        onBlur={() => setAlert("")}
-                    />
-                </ThemedView>
-                <ThemedView style={{ gap: 10 }}>
-                    <ThemedText darkColor={Colors[theme].inputLabel}>Icon</ThemedText>
-                    <Pressable>
-                        <ThemedView
-                            darkColor={Colors.dark.inputBg}
-                            style={[styles.topRight, {
-                                borderColor: theme === "dark" ? Colors[theme].border : '',
-                            }]}
-                        >
-                            <AntDesign name="plus" size={26} color={Colors[theme].border} />
+        <ThemedView style={[styles.container]}>
+            <ThemedView>
+                <Pressable 
+                    onPress={() => router.push({ 
+                        pathname: "/(session)/cycles", 
+                        params: { mode: "focus" } 
+                    })} 
+                    style={({ pressed }) => ({
+                        ...styles.pressable,
+                        borderColor: pressed ? Colors.accentColor : 'transparent'
+                    })}
+                >
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <MaterialIcons style={styles.transformIcon} name="psychology" size={35} color="rgb(58, 90, 154)" />
                         </ThemedView>
-                    </Pressable>
-                </ThemedView>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Focus Mode</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>For intensive, uninterrupted work</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>90 minutes, no breaks</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
+                <Pressable 
+                    onPress={() => router.push({ 
+                        pathname: "/(session)/cycles", 
+                        params: { mode: "pomodoro" } 
+                    })}
+                    style={({ pressed }) => ({
+                        ...styles.pressable,
+                        borderColor: pressed ? Colors.accentColor : 'transparent'
+                    })}
+                >
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <MaterialCommunityIcons name="timer-outline" size={24} color="rgb(58, 90, 154)" />
+                        </ThemedView>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Pomodoro</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>Classic time management technique.</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>25 minutes work, 5 minutes break</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
+                <Pressable 
+                    onPress={() => router.push({ 
+                        pathname: "/(session)/cycles", 
+                        params: { mode: "quick" } 
+                    })}
+                    style={({ pressed }) => ({
+                        ...styles.pressable,
+                        borderColor: pressed ? Colors.accentColor : 'transparent'
+                    })}
+                >
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <MaterialCommunityIcons name="timer-outline" size={24} color="rgb(58, 90, 154)" />
+                        </ThemedView>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Quick Focus</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>For a quick burst of productivity.</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>15 minutes work, 3 minutes break</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
+                <Pressable 
+                    onPress={() => router.push({ 
+                        pathname: "/(session)/cycles", 
+                        params: { mode: "study" } 
+                    })}
+                    style={({ pressed }) => ({
+                        ...styles.pressable,
+                        borderColor: pressed ? Colors.accentColor : 'transparent'
+                    })}
+                >
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <SimpleLineIcons name="graduation" size={24} color="rgb(58, 90, 154)" />
+                        </ThemedView>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Study Session</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>Optimized for learning and retention.</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>50 minutes work, 10 minutes break</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
+                <Pressable 
+                    onPress={() => router.push({ 
+                        pathname: "/(session)/cycles", 
+                        params: { mode: "custom" } 
+                    })}
+                    style={({ pressed }) => ({
+                        ...styles.pressable,
+                        borderColor: pressed ? Colors.accentColor : 'transparent'
+                    })}
+                >
+                    <ThemedView darkColor={Colors[theme].inputBg} style={styles.card}>
+                        <ThemedView darkColor="rgba(58, 90, 154, 0.2)" style={styles.cardLeft}>
+                            <SimpleLineIcons name="graduation" size={24} color="rgb(58, 90, 154)" />
+                        </ThemedView>
+                        <View>
+                            <ThemedText style={styles.cardHeader}>Custom</ThemedText>
+                            <View>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>Create your own work/break cycle.</ThemedText>
+                                <ThemedText darkColor={Colors.dark.paragraph} style={styles.paragraph}>Study your way</ThemedText>
+                            </View>
+                        </View>
+                    </ThemedView>
+                </Pressable>
             </ThemedView>
-
-            <ThemedView style={{ gap: 10 }}>
-                <ThemedText darkColor={Colors[theme].inputLabel}>Average Duration *</ThemedText>
-                <ThemedView style={[styles.timeCover, {
-                    backgroundColor: Colors[theme].inputBg,
-                    borderColor: alert === "time" ? 'rgba(82, 104, 136, 1)' : alert === "time-error" 
-                        ? Colors.inputError : Colors[theme].border,
-                    borderWidth: 1
-                }]}>
-                    <View style={styles.timeInputView}>
-                        <TextInput 
-                            style={styles.timeInput} 
-                            value={hours}
-                            maxLength={2}
-                            keyboardType="number-pad"
-                            onFocus={() => {
-                                setAlert("time")
-                                setTextSelection({ start: 0, end: 2 })
-                            }}
-                            onBlur={() => setAlert("")}
-                            placeholderTextColor={Colors[theme].placeholder}
-                            selection={textSelection}
-                            onChangeText={(text) => {
-                                setTextSelection(undefined)
-                                const numbersOnly = text.replace(/[^0-9]/g, '');
-                                setHours(numbersOnly);
-
-                                if (text.length === 2 && minuteRef) {
-                                    minuteRef.current?.focus()
-                                }
-                            }}
-                        />
-                        <ThemedText style={styles.timeLetter}>h</ThemedText>
-                    </View>
-                    <View style={styles.timeInputView}>
-                        <TextInput 
-                            ref={minuteRef}
-                            style={styles.timeInput} 
-                            value={minutes}
-                            maxLength={2}
-                            keyboardType="number-pad"
-                            onFocus={() => {
-                                setTextSelection({ start: 0, end: 2 })
-                                setAlert("time")
-                            }}
-                            onBlur={() => setAlert("")}
-                            selection={textSelection}
-                            placeholderTextColor={Colors[theme].placeholder}
-                            onChangeText={(text) => {
-                                setTextSelection(undefined)
-                                const num = parseInt(text)
-
-                                if ((num >= 0 && num <= 59) || text === '') {
-                                    const numbersOnly = text.replace(/[^0-9]/g, '');
-                                    setMinutes(numbersOnly);
-                                } else {
-                                    setMinutes("59")
-                                }
-                            }}
-                        />
-                        <ThemedText style={styles.timeLetter}>m</ThemedText>
-                    </View>
-                </ThemedView>
-            </ThemedView>
-
-            <LargeButton 
-                text="Create your First Habit Session" 
-                buttonStyle={{
-                    backgroundColor: Colors.accentColor,
-                    width: '100%',
-                    borderRadius: 15
-                }}
-                containerStyle={{
-                    position: 'absolute',
-                    bottom: 0,
-                    width: '100%',
-                    left: 20,
-                }}
-                onPress={() => {
-                    if (label.length === 0) {
-                        setAlert("name-error")
-                    } else if ((hours === "00" || hours === "0") && (minutes === "00" || minutes === "0")) {
-                        setAlert("time-error")
-                    } else {
-                        handleRoutes()
-                    }
-                }}
-            />
         </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: 20,
         flex: 1,
-        position: 'relative'
+        position: 'relative',
     },
-    containerTop: {
+    pressable: {
+        marginVertical: 10,
+        marginHorizontal: 20,
+        borderRadius: 16,
+        borderWidth: 1
+    },
+    card: {
+        borderRadius: 16,
         flexDirection: 'row',
+        padding: 15,
         gap: 15,
-        marginTop: 10,
-        marginBottom: 30
     },
-    containerTopLeft: {
-        flex: 1,
-        gap: 10,
-    },
-    input: {
-        fontSize: 16,
-        color: 'white',
-        paddingHorizontal: 15,
-        borderRadius: 15,
-        height: 55
-    },
-    topRight: {
-        borderRadius: 15,
-        borderWidth: 1,
+    cardLeft: {
+        borderRadius: 16,
         height: 55,
         width: 55,
         alignItems: 'center',
         justifyContent: 'center'
     },
-    timeCover: {
-        borderRadius: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        gap: 30,
-        paddingVertical: 30
+    cardHeader: {
+        fontSize: 18,
+        marginBottom: 5
     },
-    timeInputView: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        gap: 10
+    transformIcon: {
+        transform: [{ rotateY: '180deg' }]
     },
-    timeInput: {
-        fontSize: 65,
-        color: 'white',
-        fontWeight: 'bold',
-        letterSpacing: 1
-    },
-    timeLetter: {
-        transform: [{ translateY: -20 }]
-    },
+    paragraph: {
+        fontSize: 14,
+        lineHeight: 20
+    }
 });

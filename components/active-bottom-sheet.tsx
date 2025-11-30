@@ -223,7 +223,7 @@ export default function ActiveBottomSheet({ modal, completedSection, totalTime, 
                                     setSheeSlot(undefined)
                                 }}>
                                     <AntDesign name="plus" size={24} color="white" />
-                                    <ThemedText>Add Task</ThemedText>
+                                    <ThemedText style={{ minWidth: 80 }}>Add Task</ThemedText>
                                 </Pressable>
                                 <Pressable style={styles.sheetButtonSection} onPress={() => {
                                     setSheetType("edit")
@@ -231,7 +231,7 @@ export default function ActiveBottomSheet({ modal, completedSection, totalTime, 
                                     setSheeSlot(undefined)
                                 }}>
                                     <AntDesign name="plus" size={24} color="white" />
-                                    <ThemedText>Add Break</ThemedText>
+                                    <ThemedText style={{ minWidth: 80 }}>Add Break</ThemedText>
                                 </Pressable>
                             </View>
 
