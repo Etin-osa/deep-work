@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons, MaterialIcons, SimpleLineIcons } from '@expo/vector-icons';
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -10,9 +10,9 @@ import { Colors } from "@/constants/theme";
 export default function index() {
     const theme = useColorScheme() ?? 'light'
 
-    // useEffect(() => {
-    //     router.push("/(session)/custom")
-    // }, [])
+    useEffect(() => {
+        // router.push({ pathname: "/(session)/cycles", params: { mode: "custom" } })
+    }, [])
 
     return (
         <ThemedView style={[styles.container]}>

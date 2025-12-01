@@ -1,4 +1,4 @@
-import { Dimensions, Platform, Pressable, StyleSheet, useColorScheme, View } from "react-native";
+import { Dimensions, Platform, Pressable, StyleSheet, TextInput, useColorScheme, View } from "react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { DraxList, DraxListItem, DraxProvider } from 'react-native-drax';
@@ -38,6 +38,11 @@ const timeStyle = {
     }
 }
 
+const icons = [
+    'book', 'laptop', 'pencil', 'headphones', 'plus', 'coffee', 'brush', 'gamecontroller', 'bicycle', 'dumbbell',
+    'camera', 'code', 'paintbrush', 'mic', 'film', 'phone', 'chat', 'cart', 'leaf', 'paw', 'musicnote'
+]
+
 export default function slot() {
     const theme = useColorScheme() ?? 'light'
     const dispatch = useDispatch()
@@ -50,6 +55,11 @@ export default function slot() {
     const [slotList, setSlotList] = useState<SlotCard[]>([])
     const [sheetType, setSheetType] = useState<SlotType>("work")
     const [sheetSlot, setSheeSlot] = useState<SlotCard | undefined>()
+    const [titleFocus, setTitleFocus] = useState(false)
+    const [titleValue, setTitleValue] = useState("")
+    const [selectedIcon, setSelectedIcon] = useState(-1)
+    const [moreIcons, setMoreIcons] = useState(false)
+    const [bottomSheetType, setBottomSheetType] = useState<"save" | "add">("save")
 
     function makeId(prefix = '') {
         return prefix + Math.random().toString(36).slice(2, 9);
@@ -152,7 +162,10 @@ export default function slot() {
                 <Pressable onPress={() => router.back()}>
                     <Feather name="arrow-left" size={30} color="white" />
                 </Pressable>
-                <Pressable>
+                <Pressable onPress={() => {
+                    setBottomSheetType("save")
+                    handlePresentModalPress()
+                }}>
                     <ThemedText darkColor={Colors.accentColor} style={{ fontSize: 18, fontWeight: '600' }}>Save</ThemedText>
                 </Pressable>
             </ThemedView>
@@ -222,7 +235,10 @@ export default function slot() {
                     ListFooterComponent={<ThemedView style={{ height: 100 }} />}
                 />
 
-                <Pressable style={styles.addBtnPressable} onPress={handlePresentModalPress}>
+                <Pressable style={styles.addBtnPressable} onPress={() => {
+                    setBottomSheetType("add")
+                    handlePresentModalPress()
+                }}>
                     <ThemedView style={styles.addBtnView}>
                         <AntDesign name="plus" size={20} color="white" />
                     </ThemedView>
@@ -248,10 +264,15 @@ export default function slot() {
             <BottomSheetModalProvider>
                 <BottomSheetModal 
                     ref={bottomSheetModalRef}
-                    snapPoints={deviceHeight > 832 ? ["65%", "100%"] : ["70", "100%"]}
+                    snapPoints={bottomSheetType === "add" ? ["65%", "100%"] : ["50%", "100%"]}
                     enableDynamicSizing={false}
                     enablePanDownToClose
-                    onChange={(index) => index === -1 && setSheeSlot(undefined)}
+                    onChange={(index) => {
+                        if (index === -1) { 
+                            setSheeSlot(undefined)
+                            setMoreIcons(false)
+                        }
+                    }}
                     backgroundStyle={{
                         backgroundColor: Colors[theme].slotModal,
                     }}
@@ -272,35 +293,135 @@ export default function slot() {
                         />
                     }
                 >
-                    <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 10, gap: 20 }}>
-                        <SlotSheet 
-                            handleCloseModalPress={handleCloseModalPress}
-                            setSheetType={setSheetType}
-                            sheetSlot={sheetSlot}
-                            sheetType={sheetType}
-                            closeColor={Colors[theme].placeholder}
-                            selectedBorderColor="rgb(19, 127, 236)"
-                            selectedBackgroundColor={Colors.secondaryColor}
-                            selectedContentColor={Colors.accentColor}
-                            defaultBorderColor={Colors[theme].border}
-                            defaultBackgroundColor='transparent'
-                            defaultContentColor="white"
-                            labelColor={Colors[theme].inputLabel}
-                            inputBackgroundColor={Colors[theme].inputBg}
-                            inputFocusColor={'rgba(82, 104, 136, 1)'}
-                            inputBlurColor={Colors[theme].border}
-                            placeholderColor={Colors[theme].placeholder}
-                            cancelButtonColor='rgb(51, 65, 85)'
-                            saveButtonColor={Colors.accentColor}
-                            timerColor={Colors[theme].placeholder}
-                            onSave={handleOnSaveSlot}
-                        />
-                    </BottomSheetView>
+                    {bottomSheetType === "add" ? 
+                        (
+                            <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 10, gap: 20 }}>
+                                <SlotSheet 
+                                    handleCloseModalPress={handleCloseModalPress}
+                                    setSheetType={setSheetType}
+                                    sheetSlot={sheetSlot}
+                                    sheetType={sheetType}
+                                    closeColor={Colors[theme].placeholder}
+                                    selectedBorderColor="rgb(19, 127, 236)"
+                                    selectedBackgroundColor={Colors.secondaryColor}
+                                    selectedContentColor={Colors.accentColor}
+                                    defaultBorderColor={Colors[theme].border}
+                                    defaultBackgroundColor='transparent'
+                                    defaultContentColor="white"
+                                    labelColor={Colors[theme].inputLabel}
+                                    inputBackgroundColor={Colors[theme].inputBg}
+                                    inputFocusColor={'rgba(82, 104, 136, 1)'}
+                                    inputBlurColor={Colors[theme].border}
+                                    placeholderColor={Colors[theme].placeholder}
+                                    cancelButtonColor='rgb(51, 65, 85)'
+                                    saveButtonColor={Colors.accentColor}
+                                    timerColor={Colors[theme].placeholder}
+                                    onSave={handleOnSaveSlot}
+                                />
+                            </BottomSheetView> 
+                        ) : (
+                            <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 10, gap: 20 }}>
+                                <View style={styles.bottomSheetSaveHeader}>
+                                    <ThemedText style={{ fontWeight: 'bold', fontSize: 20 }}>Session Information</ThemedText>
+                                    <Pressable onPress={handleCloseModalPress} style={{ padding: 5 }}>
+                                        <AntDesign name="close" size={20} color={Colors[theme].placeholder} />
+                                    </Pressable>
+                                </View>
+
+                                <View style={styles.containerTopLeft}>
+                                    <ThemedText darkColor={Colors[theme].inputLabel}>Title</ThemedText>
+                                    <TextInput 
+                                        placeholder="e.g., Morning Study"
+                                        placeholderTextColor={Colors[theme].placeholder}
+                                        style={[styles.input, { 
+                                            backgroundColor: Colors[theme].inputBg,
+                                            borderColor: titleFocus ? 'rgba(82, 104, 136, 1)' : Colors[theme].border,
+                                            borderWidth: 1
+                                        }]}
+                                        onChangeText={(text) => setTitleValue(text)}
+                                        onFocus={() => setTitleFocus(true)}
+                                        onBlur={() => setTitleFocus(false)}
+                                    />
+                                </View>
+                                
+                                <View style={styles.containerTopLeft}>
+                                    <ThemedText darkColor={Colors[theme].inputLabel}>Icon</ThemedText>
+                                    <View style={styles.iconContainer}>
+                                        {icons.map((name, index) => {
+                                            if (index < 5) {
+                                                if (index === 4 && !moreIcons) {
+                                                    return (
+                                                        <EachIcon 
+                                                            key={index}
+                                                            name={name} 
+                                                            isSelected={selectedIcon === index} 
+                                                            onPress={() => {
+                                                                setMoreIcons(true)
+                                                                bottomSheetModalRef.current?.expand()
+                                                            }}
+                                                        />
+                                                    )
+                                                }
+
+                                                return (
+                                                    <EachIcon 
+                                                        key={index}
+                                                        name={name} 
+                                                        isSelected={selectedIcon === index} 
+                                                        onPress={() => setSelectedIcon(index)}
+                                                    />
+                                                )
+                                            }
+
+                                            if (moreIcons) {
+                                                return (
+                                                    <EachIcon 
+                                                        key={index}
+                                                        name={name} 
+                                                        isSelected={selectedIcon === index} 
+                                                        onPress={() => setSelectedIcon(index)}
+                                                    />
+                                                )
+                                            }
+                                        })}
+                                    </View>
+                                </View>
+
+                                <View style={{ marginTop: 20 }}>
+                                    <LargeButton 
+                                        text="Save Session"
+                                        buttonStyle={{
+                                            backgroundColor: Colors.accentColor,
+                                            width: '100%',
+                                            borderRadius: 15
+                                        }}
+                                        onPress={() => {
+                                            handleCloseModalPress()
+                                        }}
+                                    />
+                                </View>
+                            </BottomSheetView>
+                        )
+                    }
                 </BottomSheetModal>
             </BottomSheetModalProvider>
         </ThemedView>
     );
 }
+
+const EachIcon = ({ name, isSelected, onPress }: { name: string, isSelected: boolean, onPress: () => void }) => (
+    <Pressable 
+        style={[styles.eachIconView, isSelected && styles.selectedIcon]}
+        onPress={onPress}
+    >
+        <AntDesign 
+            // @ts-ignore
+            name={name} 
+            size={20} 
+            color={isSelected ? Colors.accentColor : "#f5f5f5"} 
+        />
+    </Pressable>
+)
 
 const styles = StyleSheet.create({
     container: {
@@ -379,4 +500,34 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         height: 55
     },
+    containerTopLeft: {
+        flex: 1,
+        gap: 10,
+    },
+    bottomSheetSaveHeader: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        paddingBottom: 10 
+    },
+    iconContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 10
+    },
+    eachIconView: {
+        borderRadius: 15,
+        borderWidth: 1,
+        height: 55,
+        width: 55,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderColor: Colors.dark.border
+    },
+    selectedIcon: { 
+        borderColor: Colors.accentColor,
+        borderWidth: 2,
+        backgroundColor: Colors.secondaryColor
+    }
 });

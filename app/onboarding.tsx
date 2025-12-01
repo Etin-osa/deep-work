@@ -57,7 +57,7 @@ export default function onboarding() {
     const [carouselHeight, setCarouselHeight] = useState(0)
 
     useEffect(() => {
-        router.push("/(session)")
+        // router.push("/(session)")
     }, [])
 
     return (
