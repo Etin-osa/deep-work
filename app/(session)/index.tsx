@@ -11,7 +11,7 @@ export default function index() {
     const theme = useColorScheme() ?? 'light'
 
     useEffect(() => {
-        // router.push({ pathname: "/(session)/cycles", params: { mode: "custom" } })
+        router.push({ pathname: "/(session)/cycles", params: { mode: "custom" } })
     }, [])
 
     return (

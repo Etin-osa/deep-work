@@ -32,19 +32,6 @@ export default function _layout() {
                         headerRight: () => <></>
                     }} 
                 />
-                <Stack.Screen 
-                    name="custom" 
-                    options={{ 
-                        header: () => (
-                            <ThemedView style={styles.indexCover}>
-                                <Pressable onPress={() => router.back()}>
-                                    <Feather name="arrow-left" size={30} color="white" />
-                                </Pressable>
-                                <ThemedText style={styles.logoText}>New Session</ThemedText>
-                            </ThemedView>
-                        )
-                    }} 
-                />
                 <Stack.Screen name="cycles" options={{ headerShown: false }} />
             </Stack>
         </SafeAreaView>
